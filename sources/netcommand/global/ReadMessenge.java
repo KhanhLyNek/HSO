@@ -337,6 +337,7 @@ public class ReadMessenge extends AvMain {
             }
             GameScreen.nameSpecialRegion = message.reader().readUTF();
             GameScreen.timeSpRegion = message.reader().readLong();
+            ChildLocationDiagnostics.onRegionNotice(GameScreen.nameSpecialRegion, GameScreen.timeSpRegion);
             Skill.resetContent();
             GameScreen.player.typeObject = (byte) 0;
             GameScreen.player.name = lowerCase.toLowerCase();
