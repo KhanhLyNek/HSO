@@ -43,7 +43,7 @@ public final class TestMenu {
         int oldW = g.getClipWidth(), oldH = g.getClipHeight();
         g.setClip(0, 0, width, height);
         int w = Math.min(194, width - 4);
-        int h = 139;
+        int h = 168;
         int x = (width - w) / 2;
         int y = Math.max(2, (height - h) / 2);
         g.setColor(0x142032);
@@ -67,6 +67,10 @@ public final class TestMenu {
         g.setColor(0xB8C6D6);
         g.drawString("Map: " + ChildLocationDiagnostics.getMapId() + " Khu: " + ChildLocationDiagnostics.getArea(),
                 x + 8, y + 110, Graphics.TOP | Graphics.LEFT);
+        g.drawString("Region notices: " + ChildLocationDiagnostics.getRegionNoticeCount(),
+                x + 8, y + 129, Graphics.TOP | Graphics.LEFT);
+        g.drawString("Child location: unverified",
+                x + 8, y + 146, Graphics.TOP | Graphics.LEFT);
         g.setClip(oldX, oldY, oldW, oldH);
         g.setColor(oldColor);
     }
