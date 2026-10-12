@@ -13,8 +13,10 @@ jobs:
         with:
           distribution: temurin
           java-version: '8'
-      - name: Compile offline menu with MIDP Graphics test stub
+      - name: Compile diagnostics with MIDP stub
+        shell: bash
         run: |
+          set -euo pipefail
           mkdir -p /tmp/j2me-stub/javax/microedition/lcdui build/classes
           cat > /tmp/j2me-stub/javax/microedition/lcdui/Graphics.java <<'EOF'
           package javax.microedition.lcdui;
@@ -32,18 +34,23 @@ jobs:
             public void drawString(String s,int x,int y,int anchor){}
           }
           EOF
-          javac -source 7 -target 7 -d build/classes \
+          javac -source 7 -target 7 -sourcepath /tmp/j2me-stub -d build/classes \
             /tmp/j2me-stub/javax/microedition/lcdui/Graphics.java \
+            sources/Main/ChildLocationDiagnostics.java \
             sources/Main/TestMenu.java
           test -f build/classes/Main/TestMenu.class
-      - name: Verify full source inventory
+          test -f build/classes/Main/ChildLocationDiagnostics.class
+      - name: Verify source inventory
         run: |
           echo "Java sources: $(find sources -name '*.java' | wc -l)"
           echo "Precompiled classes: $(find resources -name '*.class' | wc -l)"
           test -f resources/META-INF/MANIFEST.MF
           test -f sources/com/silverknight/TemCanvas.java
-      - name: Upload compiled menu diagnostic
+      - name: Upload compiled diagnostic classes
         uses: actions/upload-artifact@v4
         with:
           name: hso-menu-diagnostic-classes
-          path: build/classes/Main/TestMenu.class
+          path: |
+            build/classes/Main/TestMenu.class
+            build/classes/Main/ChildLocationDiagnostics.class
+          if-no-files-found: error
