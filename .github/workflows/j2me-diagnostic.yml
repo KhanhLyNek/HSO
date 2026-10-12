@@ -41,7 +41,7 @@ jobs:
           echo "Java sources: $(find sources -name '*.java' | wc -l)"
           echo "Precompiled classes: $(find resources -name '*.class' | wc -l)"
           test -f resources/META-INF/MANIFEST.MF
-          test -f resources/com/silverknight/TemCanvas.class
+          test -f sources/com/silverknight/TemCanvas.java
       - name: Upload compiled menu diagnostic
         uses: actions/upload-artifact@v4
         with:
