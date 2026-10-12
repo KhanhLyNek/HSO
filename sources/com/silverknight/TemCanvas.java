@@ -4,6 +4,7 @@ import CLib.TemGraphics;
 import CLib.mGraphics;
 import CLib.mSystem;
 import Main.GameCanvas;
+import Main.TestMenu;
 import Thread_More.Load_Data_And_Img;
 import java.util.Vector;
 import javax.microedition.lcdui.Canvas;
@@ -42,6 +43,7 @@ public class TemCanvas extends Canvas implements Runnable {
     protected void paint(Graphics graphics) {
         tem.g = graphics;
         gamecanvas.paint(tem);
+        TestMenu.draw(graphics, getWidth(), getHeight());
     }
 
     protected void update() {
@@ -70,6 +72,7 @@ public class TemCanvas extends Canvas implements Runnable {
     }
 
     protected void keyPressed(int i) {
+        if (TestMenu.handleKey(i)) return;
         gamecanvas.keyPressed(i);
     }
 
