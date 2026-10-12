@@ -1,0 +1,129 @@
+package CLib;
+
+/* loaded from: KnightOnline_v403.jar:CLib/mSound.class */
+public class mSound {
+    private static final int MAX_VOLUME = 10;
+    public static int[] soundID;
+    public static final byte MUSIC_LANG = 0;
+    public static final byte MUSIC_THANHPHO = 1;
+    public static final byte MUSIC_THIENNHIEN = 2;
+    public static final byte MUSIC_HANGDONG = 3;
+    public static final byte MUSIC_DAMLAY = 4;
+    public static final byte MUSIC_GIOTHOI = 5;
+    public static final byte MUSIC_BOSS = 6;
+    public static final byte MUSIC_SUOIMA = 7;
+    public static final byte MUSIC_SAMAC = 8;
+    public static final byte MUSIC_PHOBANG = 9;
+    public static final byte SOUND_2KIEM_LV1 = 0;
+    public static final byte SOUND_SUNG_LV1 = 1;
+    public static final byte SOUND_PS_LV1 = 2;
+    public static final byte SOUND_KIEM_LV1 = 3;
+    public static final byte SOUND_KIEM_LV2 = 4;
+    public static final byte SOUND_KIEM_LV3 = 5;
+    public static final byte SOUND_KIEM_LV4 = 6;
+    public static final byte SOUND_2KIEM_LV2 = 7;
+    public static final byte SOUND_2KIEM_LV3_GAIDOC = 8;
+    public static final byte SOUND_2KIEM_LV3_PHANTHAN = 9;
+    public static final byte SOUND_2KIEM_LV4_5KIEM = 10;
+    public static final byte SOUND_2KIEM_LV5_MUADOC = 11;
+    public static final byte SOUND_PS_LV2 = 13;
+    public static final byte SOUND_PS_LV3 = 14;
+    public static final byte SOUND_PS_LV4 = 15;
+    public static final byte SOUND_PS_LV5 = 16;
+    public static final byte SOUND_SUNG_LV2_3VIEN = 12;
+    public static final byte SOUND_SUNG_LV2_DANDIEN = 17;
+    public static final byte SOUND_SUNG_LV3_TENLUA = 18;
+    public static final byte SOUND_SUNG_LV3_LASER = 19;
+    public static final byte SOUND_SUNG_LV4_BAODAN = 20;
+    public static final byte SOUND_SUNG_LV4_SET = 21;
+    public static final byte SOUND_SUNG_LV5_MUASET = 22;
+    public static final byte SOUND_SUNG_LV5_MUATENLUA = 23;
+    public static final byte SOUND_EFF_CUONGHOA1 = 24;
+    public static final byte SOUND_PET_SOI = 25;
+    public static final byte SOUND_EFF_CUONGHOA_OK = 26;
+    public static final byte SOUND_EFF_CUONGHOA_FAIL = 27;
+    public static final byte SOUND_EFF_COIN_GEM = 28;
+    public static final byte SOUND_EFF_SHOW_BOX = 29;
+    public static final byte SOUND_EFF_GONG_BUFF_NU = 30;
+    public static final byte SOUND_EFF_GONG_BUFF_NAM = 31;
+    public static final byte SOUND_EFF_THIENTHACHROI = 32;
+    public static final byte SOUND_EFF_BOSSXUATHIEN = 33;
+    public static final byte SOUND_EFF_BOSS_S_PHONG = 34;
+    public static final byte SOUND_EFF_BOSS_S_NUOC = 35;
+    public static final byte SOUND_EFF_BOSS_S_TOA = 36;
+    public static final byte SOUND_EFF_BOSS_S_LUA = 37;
+    public static final byte SOUND_EFF_BIDANH = 38;
+    public static final byte SOUND_EFF_GIAOTIEP = 39;
+    public static final byte SOUND_EFF_THAYDO = 40;
+    public static final byte SOUND_EFF_CLICK = 41;
+    public static final byte SOUND_EFF_MENU = 42;
+    public static final byte SOUND_EFF_THOREN = 43;
+    public static final byte SOUND_EFF_DAMDONG1 = 44;
+    public static final byte SOUND_EFF_TELE = 45;
+    public static final byte SOUND_EFF_BUOCCHAN = 46;
+    public static final byte SOUND_EFF_MEO = 47;
+    public static final byte SOUND_EFF_GA = 48;
+    public static final byte SOUND_EFF_ECH = 49;
+    public static final byte SOUND_EFF_ECH_TIEP_NUOC = 50;
+    public static final byte SOUND_EFF_PLAYERDINUOC = 51;
+    public static final byte SOUND_EFF_CHUOT = 52;
+    public static final byte SOUND_EFF_DUOCLUA = 53;
+    public static final byte SOUND_EFF_VOIPHUNNUOC = 54;
+    public static final byte SOUND_EFF_NUOCCHAY = 55;
+    public static final byte SOUND_EFF_GIOTNUOC = 56;
+    public static final byte SOUND_PET_BAN_TEN = 57;
+    public static final byte SOUND_EFF_CHAN_NGUA = 58;
+    public static boolean isEnableSound = false;
+    public static int volumeSound = 0;
+    public static int volumeMusic = 0;
+    public static int CurMusic = -1;
+    public static boolean isMusic = true;
+    public static boolean isSound = true;
+
+    public static void init(int i, int i2) {
+    }
+
+    public static int getSoundPoolSource(int i, String str) {
+        return -1;
+    }
+
+    public static int getMediaSoundFile(String str) {
+        return -1;
+    }
+
+    public static void playSound(int i, int i2) {
+    }
+
+    public static void SetLoopSound(int i, int i2, int i3) {
+    }
+
+    public static void UnSetLoopAll() {
+    }
+
+    public static void playMus(int i, int i2, boolean z) {
+    }
+
+    public static void pauseMusic(int i) {
+    }
+
+    public static void pauseCurMusic() {
+    }
+
+    public static void resumeMusic(int i) {
+    }
+
+    public static void resumeAll() {
+    }
+
+    public static void releaseAll() {
+    }
+
+    public static void stopAll() {
+    }
+
+    public static void stopSoundAll() {
+    }
+
+    public static void setVolume(int i, int i2, int i3) {
+    }
+}
