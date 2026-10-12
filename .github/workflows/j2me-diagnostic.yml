@@ -54,31 +54,12 @@ jobs:
             build/classes/Main/TestMenu.class
             build/classes/Main/ChildLocationDiagnostics.class
           if-no-files-found: error
-      - name: Assemble candidate MIDlet JAR from existing compiled classes
+      - name: Verify real J2ME integration before release
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p build/jar
-          cp -a resources/. build/jar/
-          mkdir -p build/jar/Main
-          cp build/classes/Main/TestMenu.class build/jar/Main/
-          cp build/classes/Main/ChildLocationDiagnostics.class build/jar/Main/
-          if [ ! -f build/jar/com/silverknight/TemMidlet.class ]; then
-            echo "::error::Missing compiled TemMidlet.class. Decompiled .java files cannot be packaged as a runnable J2ME game without a full CLDC/MIDP compiler and preverification."
-            exit 1
-          fi
-          if [ ! -f build/jar/com/silverknight/TemCanvas.class ]; then
-            echo "::error::Missing compiled TemCanvas.class; overlay integration is not present in the packaged game."
-            exit 1
-          fi
-          jar cfm build/HSO-Test.jar resources/META-INF/MANIFEST.MF -C build/jar .
-          jar tf build/HSO-Test.jar | grep -q '^Main/TestMenu.class$'
-          jar tf build/HSO-Test.jar | grep -q '^com/silverknight/TemMidlet.class$'
-          echo "::warning::JAR assembly does not prove edited TemCanvas/ReadMessenge bytecode is included or MIDP compatibility. Do not distribute as a verified online test build."
-      - name: Upload candidate JAR
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: HSO-Test-candidate-JAR
-          path: build/HSO-Test.jar
-          if-no-files-found: error
+          echo "The diagnostic classes compiled above are JVM Java 7 classes, NOT CLDC 1.0 preverified classes."
+          echo "The actual TemCanvas and ReadMessenge game classes were NOT recompiled."
+          echo "A runnable J2ME release requires MIDP/CLDC APIs, full client compilation and preverification."
+          echo "::error::Full J2ME build is not configured. Refusing to publish a misleading HSO-Test.jar."
+          exit 1
