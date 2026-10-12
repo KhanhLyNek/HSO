@@ -1,0 +1,49 @@
+name: HSO J2ME diagnostic build
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+      - name: Compile offline menu with MIDP Graphics test stub
+        run: |
+          mkdir -p /tmp/j2me-stub/javax/microedition/lcdui build/classes
+          cat > /tmp/j2me-stub/javax/microedition/lcdui/Graphics.java <<'EOF'
+          package javax.microedition.lcdui;
+          public class Graphics {
+            public static final int TOP=16, LEFT=4;
+            public int getColor(){return 0;}
+            public void setColor(int c){}
+            public int getClipX(){return 0;}
+            public int getClipY(){return 0;}
+            public int getClipWidth(){return 240;}
+            public int getClipHeight(){return 320;}
+            public void setClip(int x,int y,int w,int h){}
+            public void fillRect(int x,int y,int w,int h){}
+            public void drawRect(int x,int y,int w,int h){}
+            public void drawString(String s,int x,int y,int anchor){}
+          }
+          EOF
+          javac -source 7 -target 7 -d build/classes \
+            /tmp/j2me-stub/javax/microedition/lcdui/Graphics.java \
+            sources/Main/TestMenu.java
+          test -f build/classes/Main/TestMenu.class
+      - name: Verify full source inventory
+        run: |
+          echo "Java sources: $(find sources -name '*.java' | wc -l)"
+          echo "Precompiled classes: $(find resources -name '*.class' | wc -l)"
+          test -f resources/META-INF/MANIFEST.MF
+          test -f resources/com/silverknight/TemCanvas.class
+      - name: Upload compiled menu diagnostic
+        uses: actions/upload-artifact@v4
+        with:
+          name: hso-menu-diagnostic-classes
+          path: build/classes/Main/TestMenu.class
