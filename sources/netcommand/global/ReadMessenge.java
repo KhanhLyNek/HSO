@@ -71,6 +71,7 @@ import InterfaceComponents.TabSkillsNew;
 import InterfaceComponents.iCommand;
 import InterfaceComponents.infoShow;
 import Main.GameCanvas;
+import Main.ChildLocationDiagnostics;
 import Main.GameMidlet;
 import Main.ImageEffect;
 import Main.ImageEffectAuto;
@@ -1054,6 +1055,7 @@ public class ReadMessenge extends AvMain {
             }
             byte readByte3 = message.reader().readByte();
             LoadMap.Area = message.reader().readByte();
+            ChildLocationDiagnostics.onMapChanged(GameCanvas.loadmap.idMap, GameCanvas.loadmap.nameMap, LoadMap.Area);
             GameCanvas.end_Dialog();
             GameCanvas.clearKeyHold();
             GameCanvas.load.isTele = false;
@@ -3417,6 +3419,7 @@ public class ReadMessenge extends AvMain {
             GameScreen.RemoveLoadMap();
             LoadMapScreen.isNextMap = true;
             LoadMap.Area = message.reader().readByte();
+            ChildLocationDiagnostics.onAreaChanged(LoadMap.Area);
             GameScreen.player.x = message.reader().readShort() * 24;
             GameScreen.player.y = message.reader().readShort() * 24;
             GameScreen.player.resetMove();
