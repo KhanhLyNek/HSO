@@ -25,7 +25,7 @@ public final class TilePathfinderTest {
         }
         r=finder.route(tiles,11,11,2,2,8,2,4,0);
         check(r!=null && !r.complete && r.steps.length==4, "path chunk");
-        tiles[7*11+5]=1;
+        for (int y=0;y<11;y++) tiles[y*11+5]=1;
         check(finder.route(tiles,11,11,2,2,8,2,40,0)==null,
              "reject unreachable target");
         int[] sample=map(6,6);
