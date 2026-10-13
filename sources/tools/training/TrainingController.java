@@ -38,6 +38,8 @@ public final class TrainingController {
     private static boolean homeSent, areaSent, previousAutoHp;
 
     private static final int MAX_WAYPOINTS = 6;
+    private static final PatrolBrain patrolBrain = new PatrolBrain(MAX_WAYPOINTS);
+    private static final int[] nearbyDensity = new int[MAX_WAYPOINTS];
     private static final int[] patrolX = new int[MAX_WAYPOINTS];
     private static final int[] patrolY = new int[MAX_WAYPOINTS];
     private static int patrolCount, patrolIndex, patrolMap = -1;
@@ -104,7 +106,11 @@ public final class TrainingController {
                 return;
             }
         }
-        if (patrolCount == 0) { patrolMap = here; patrolArea = LoadMap.Area; }
+        if (patrolCount == 0) {
+            patrolMap = here;
+            patrolArea = LoadMap.Area;
+            patrolBrain.clear();
+        }
         patrolX[patrolCount] = p.x;
         patrolY[patrolCount] = p.y;
         patrolCount++;
@@ -115,6 +121,7 @@ public final class TrainingController {
         patrolCount = 0;
         patrolIndex = 0;
         patrolMap = -1;
+        patrolBrain.clear();
         notice("Đã xoá tuyến tuần tra.");
     }
 
@@ -196,12 +203,24 @@ public final class TrainingController {
                 && !target.isMonstervantieu() && !target.isMiNuong() &&
                 !target.isLuaThieng() && target.typeMonster != 7 &&
                 target.Action != 4 && !target.isDie && !target.isSend
-                && MainObject.getDistance(target.x, target.y, spotX, spotY)
+                && MainObject.getDistance(target.x, target.y, campX(), campY())
                    <= TrainingSettings.getMaximumRange();
     }
 
     /** Prevents the original nearest-monster routine selecting trade animals,
      * quest targets, bosses or CAPTCHA when an automatic training mode is on. */
+    private static int campX() {
+        return TrainingSettings.isPatrolEnabled() && patrolCount > 1 &&
+                GameCanvas.loadmap != null && GameCanvas.loadmap.idMap == patrolMap &&
+                LoadMap.Area == patrolArea ? patrolX[patrolIndex] : spotX;
+    }
+
+    private static int campY() {
+        return TrainingSettings.isPatrolEnabled() && patrolCount > 1 &&
+                GameCanvas.loadmap != null && GameCanvas.loadmap.idMap == patrolMap &&
+                LoadMap.Area == patrolArea ? patrolY[patrolIndex] : spotY;
+    }
+
     public static boolean selectNextMonster(Player p) {
         if (!TrainingSettings.isEnabled() || state != TRAIN) return false;
         smartTargetTick(p);
@@ -222,20 +241,33 @@ public final class TrainingController {
         int currentScore = TargetPolicy.INVALID;
         int detected = 0;
         int maxRange = TrainingSettings.getMaximumRange();
+        for (int j = 0; j < patrolCount; j++) nearbyDensity[j] = 0;
         for (int i = 0; i < GameScreen.Vecplayers.size(); i++) {
             MainObject mob = (MainObject) GameScreen.Vecplayers.elementAt(i);
             if (mob == null || !allowMonster(mob)) continue;
             int distance = MainObject.getDistance(p.x, p.y, mob.x, mob.y);
-            int campDistance = MainObject.getDistance(spotX, spotY, mob.x, mob.y);
+            int campDistance = MainObject.getDistance(campX(), campY(), mob.x, mob.y);
             int score = TargetPolicy.score(TrainingSettings.getMode(), p.Lv, mob.Lv,
                     distance, campDistance, maxRange, mob.hp, mob.maxHp,
                     true, mob.typeBoss != 0 || mob.isDie || mob.isSend);
             if (score == TargetPolicy.INVALID) continue;
             detected++;
+            if (TrainingSettings.isPatrolEnabled() && patrolCount > 1) {
+                for (int j = 0; j < patrolCount; j++) {
+                    if (MainObject.getDistance(mob.x, mob.y, patrolX[j], patrolY[j]) < 150)
+                        nearbyDensity[j]++;
+                }
+            }
             if (mob == current) currentScore = score;
             if (score > bestScore) { best = mob; bestScore = score; }
         }
         candidates = detected;
+        if (TrainingSettings.isPatrolEnabled() && patrolCount > 1) {
+            for (int j = 0; j < patrolCount; j++) {
+                if (MainObject.getDistance(p.x, p.y, patrolX[j], patrolY[j]) < 260)
+                    patrolBrain.observe(j, nearbyDensity[j]);
+            }
+        }
         if (best == null) {
             if (Player.isAutoFire == 1) Player.isAutoFire = (byte) 0;
             selectedTargetId = -1;
@@ -278,7 +310,8 @@ public final class TrainingController {
         int destinationY = patrolY[patrolIndex];
         if (MainObject.getDistance(p.x, p.y, destinationX, destinationY) <
                 LoadMap.wTile * 2) {
-            patrolIndex = (patrolIndex + 1) % patrolCount;
+            patrolBrain.markVisit(patrolIndex, now);
+            patrolIndex = patrolBrain.next(patrolIndex, patrolCount, now);
             destinationX = patrolX[patrolIndex];
             destinationY = patrolY[patrolIndex];
             lastPatrolMove = now;
@@ -293,6 +326,7 @@ public final class TrainingController {
         } else if (now - lastPatrolMove > 8000L) {
             p.posTransRoad = null;
             stuckCount++;
+            patrolBrain.markObstacle(patrolIndex);
             lastPatrolMove = now;
             if (stuckCount >= 3) {
                 stop("Tuần tra bị kẹt, đã dừng an toàn.");
