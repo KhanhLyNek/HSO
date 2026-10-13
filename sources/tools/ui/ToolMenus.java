@@ -131,8 +131,8 @@ public final class ToolMenus {
     }
 
     public static void showDynamic(Menu2 menu, mVector choices, int place,
-                                   byte menuId, short npcId, String message) {
-        if (!TrainingController.onDynamicMenu(npcId, menuId, choices)) {
+                                   int menuId, int npcId, String message) {
+        if (!TrainingController.onDynamicMenu((short) npcId, (byte) menuId, choices)) {
             menu.setinfoDynamic(choices, place, menuId, npcId, message);
         }
     }
