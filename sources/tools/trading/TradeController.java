@@ -255,7 +255,7 @@ public final class TradeController {
     public static void onDeath() {
         if (state == RECORD || isRunning()) {
             stop();
-            say("Nhan vat chet; dung tuyen de tranh mat hang.");
+            say("Nhân vật chết, đã dừng tuyến để tránh mất hàng.");
         }
     }
 
