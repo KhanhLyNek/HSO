@@ -28,6 +28,7 @@ import Skill.Skill;
 import Skill.SplashSkill;
 import Thread_More.LoadMap;
 import tools.training.TrainingController;
+import tools.trading.TradeController;
 import netcommand.global.GlobalService;
 
 /* loaded from: KnightOnline_v403.jar:GameObjects/Player.class */
@@ -271,6 +272,7 @@ public class Player extends MainObject {
             setMove(true);
             updatePlayer();
             TrainingController.tick(this);
+            TradeController.tick(this);
             updateEye();
             if (party != null && party.update()) {
                 party = null;
