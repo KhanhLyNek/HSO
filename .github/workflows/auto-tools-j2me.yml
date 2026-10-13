@@ -36,6 +36,7 @@ jobs:
           javac --release 8 -encoding UTF-8 -cp resources -d build/mod-classes \
             sources/tools/core/ModeArbiter.java \
             sources/tools/core/SuperToolEngine.java \
+            sources/tools/recovery/RecoverySnapshot.java \
             sources/tools/trading/TradeRoute.java \
             sources/tools/trading/TradeController.java \
             sources/tools/training/TargetPolicy.java \
@@ -61,6 +62,8 @@ jobs:
           javac --release 8 -encoding UTF-8 -d build/unit-test \
             sources/tools/core/ModeArbiter.java \
             tests/tools/core/ModeArbiterTest.java \
+            sources/tools/recovery/RecoverySnapshot.java \
+            tests/tools/recovery/RecoverySnapshotTest.java \
             sources/tools/training/TargetPolicy.java \
             tests/tools/training/TargetPolicyTest.java \
             sources/tools/training/PatrolBrain.java \
@@ -72,6 +75,7 @@ jobs:
             sources/tools/navigation/WorldMemory.java \
             tests/tools/navigation/WorldMemoryTest.java
           java -cp build/unit-test tools.core.ModeArbiterTest
+          java -cp build/unit-test tools.recovery.RecoverySnapshotTest
           java -cp build/unit-test tools.training.TargetPolicyTest
           java -cp build/unit-test tools.training.PatrolBrainTest
           java -cp build/unit-test tools.trading.TradeRouteTest
@@ -185,6 +189,7 @@ jobs:
             "tools/ui/ToolHud.class",
             "tools/core/ModeArbiter.class",
             "tools/core/SuperToolEngine.class",
+            "tools/recovery/RecoverySnapshot.class",
             "tools/training/TrainingController.class",
             "tools/training/TrainingSettings.class",
             "tools/training/TargetPolicy.class",
