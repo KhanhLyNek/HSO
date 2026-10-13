@@ -1,4 +1,4 @@
-name: HSO LyMeowz Super Auto 3.0 J2ME build
+name: HSO LyMeowz Super Tool 4.0.1 CLDC build
 
 on:
   push:
@@ -34,6 +34,8 @@ jobs:
           set -euo pipefail
           mkdir -p build/mod-classes build/patcher-classes build/patch-classes build/jar-root
           javac --release 8 -encoding UTF-8 -cp resources -d build/mod-classes \
+            sources/tools/core/ModeArbiter.java \
+            sources/tools/core/SuperToolEngine.java \
             sources/tools/trading/TradeRoute.java \
             sources/tools/trading/TradeController.java \
             sources/tools/training/TargetPolicy.java \
@@ -48,7 +50,8 @@ jobs:
             sources/tools/navigation/LocalSurvey.java \
             sources/tools/quest/QuestAssistant.java \
             sources/tools/boss/BossController.java \
-            sources/tools/ui/ToolMenus.java
+            sources/tools/ui/ToolMenus.java \
+            sources/tools/ui/ToolHud.java
 
       - name: Run Smart AI target and convoy-route unit tests
         shell: bash
@@ -56,6 +59,8 @@ jobs:
           set -euo pipefail
           mkdir -p build/unit-test
           javac --release 8 -encoding UTF-8 -d build/unit-test \
+            sources/tools/core/ModeArbiter.java \
+            tests/tools/core/ModeArbiterTest.java \
             sources/tools/training/TargetPolicy.java \
             tests/tools/training/TargetPolicyTest.java \
             sources/tools/training/PatrolBrain.java \
@@ -66,6 +71,7 @@ jobs:
             tests/tools/navigation/TilePathfinderTest.java \
             sources/tools/navigation/WorldMemory.java \
             tests/tools/navigation/WorldMemoryTest.java
+          java -cp build/unit-test tools.core.ModeArbiterTest
           java -cp build/unit-test tools.training.TargetPolicyTest
           java -cp build/unit-test tools.training.PatrolBrainTest
           java -cp build/unit-test tools.trading.TradeRouteTest
@@ -156,7 +162,7 @@ jobs:
           python3 - <<'PY'
           import pathlib, zipfile
           root = pathlib.Path("build/jar-root")
-          with zipfile.ZipFile("build/LyMeowz-SuperAuto-3.0.jar", "w", zipfile.ZIP_DEFLATED) as out:
+          with zipfile.ZipFile("build/LyMeowz-SuperTool-4.0.1.jar", "w", zipfile.ZIP_DEFLATED) as out:
               for file in sorted(root.rglob("*")):
                   if file.is_file():
                       out.write(file, file.relative_to(root).as_posix())
@@ -168,7 +174,7 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           import struct, zipfile
-          path="build/LyMeowz-SuperAuto-3.0.jar"
+          path="build/LyMeowz-SuperTool-4.0.1.jar"
           required=[
             "META-INF/MANIFEST.MF",
             "GameScreen/GameScreen.class",
@@ -176,6 +182,9 @@ jobs:
             "GameObjects/Player.class",
             "netcommand/global/ReadMessenge.class",
             "tools/ui/ToolMenus.class",
+            "tools/ui/ToolHud.class",
+            "tools/core/ModeArbiter.class",
+            "tools/core/SuperToolEngine.class",
             "tools/training/TrainingController.class",
             "tools/training/TrainingSettings.class",
             "tools/training/TargetPolicy.class",
@@ -204,16 +213,16 @@ jobs:
               print(name, "classfile", major, "bytes", len(data))
             print("Total",len(names),"entries, JAR integrity OK")
           PY
-          javap -v -classpath build/LyMeowz-SuperAuto-3.0.jar tools.ui.ToolMenus \
+          javap -v -classpath build/LyMeowz-SuperTool-4.0.1.jar tools.ui.ToolMenus \
             | grep -m1 -E 'StackMap:|StackMapTable:' || true
 
       - name: Regression test - preserve original HSO inventory menu
         shell: bash
         run: |
           set -euo pipefail
-          javap -c -p -classpath build/LyMeowz-SuperAuto-3.0.jar \
+          javap -c -p -classpath build/LyMeowz-SuperTool-4.0.1.jar \
             tools.ui.ToolMenus > build/tool-menu-bytecode.txt
-          javap -c -p -classpath build/LyMeowz-SuperAuto-3.0.jar \
+          javap -c -p -classpath build/LyMeowz-SuperTool-4.0.1.jar \
             GameScreen.GameScreen > build/game-menu-bytecode.txt
           python3 - <<'PY'
           from pathlib import Path
@@ -228,6 +237,9 @@ jobs:
           assert "cmdMyseft:" in game, "original menu has no inventory entry"
           assert "Method GameScreen/TabScreenNew.Show:" in game, "original inventory handler gone"
           assert 'choices.addElement(action(T.tabhanhtrang, 1));' in src, "hub inventory shortcut missing"
+          assert "tools/ui/ToolHud.paint:" in game, "HUD paint hook missing"
+          assert "tools/core/SuperToolEngine" in bridge, "central tool engine not wired"
+          assert '"LyMeowz - Công cụ".equals(cmd.caption)' in src, "quick menu ID 15 not scoped"
           assert "case 1:" not in src[src.index("public static boolean dispatch"):src.index("public static boolean quickAction")], "native inventory id intercepted"
           print("Inventory/menu regression PASS: native item restored, first slot kept, handler intact.")
           PY
@@ -235,8 +247,8 @@ jobs:
       - name: Publish completed J2ME JAR
         uses: actions/upload-artifact@v4
         with:
-          name: HSO-LyMeowz-SuperAuto-3-JAR
-          path: build/LyMeowz-SuperAuto-3.0.jar
+          name: HSO-LyMeowz-SuperTool-4.0.1-JAR
+          path: build/LyMeowz-SuperTool-4.0.1.jar
           if-no-files-found: error
 
       - name: Upload build diagnostics
