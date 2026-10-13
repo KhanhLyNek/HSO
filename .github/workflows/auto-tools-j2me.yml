@@ -56,6 +56,7 @@ jobs:
             sources/tools/trading/TradeRoute.java \
             tests/tools/trading/TradeRouteTest.java
           java -cp build/unit-test tools.training.TargetPolicyTest
+          java -cp build/unit-test tools.training.PatrolBrainTest
           java -cp build/unit-test tools.trading.TradeRouteTest
 
       - name: Verify Vietnamese menu glyph coverage
