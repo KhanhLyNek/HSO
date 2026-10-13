@@ -27,6 +27,7 @@ import Skill.MainListSkill;
 import Skill.Skill;
 import Skill.SplashSkill;
 import Thread_More.LoadMap;
+import tools.training.TrainingController;
 import netcommand.global.GlobalService;
 
 /* loaded from: KnightOnline_v403.jar:GameObjects/Player.class */
@@ -269,6 +270,7 @@ public class Player extends MainObject {
             }
             setMove(true);
             updatePlayer();
+            TrainingController.tick(this);
             updateEye();
             if (party != null && party.update()) {
                 party = null;
@@ -598,6 +600,10 @@ public class Player extends MainObject {
         }
         long currentTimeMillis = System.currentTimeMillis();
         MainObject mainObject = GameScreen.ObjFocus;
+        if (!TrainingController.allowMonster(mainObject)) {
+            GameScreen.ObjFocus = null;
+            mainObject = null;
+        }
         if (mainObject == null || mainObject.Action == 4 || mainObject.typeObject != 1 || mainObject.isSend || mainObject.isDie) {
             if (mainObject != null && mainObject.isDie) {
                 GameScreen.ObjFocus = null;
@@ -656,7 +662,7 @@ public class Player extends MainObject {
         MainObject mainObject = null;
         for (int i2 = 0; i2 < GameScreen.Vecplayers.size(); i2++) {
             MainObject mainObject2 = (MainObject) GameScreen.Vecplayers.elementAt(i2);
-            if (mainObject2 != null && mainObject2.Action != 4 && !mainObject2.isSend && mainObject2.typeObject == 1 && !mainObject2.isLuaThieng() && ((distance = MainObject.getDistance(this.x, this.y, mainObject2.x, mainObject2.y)) < i || mainObject2.typeBoss == 2)) {
+            if (mainObject2 != null && mainObject2.Action != 4 && !mainObject2.isSend && mainObject2.typeObject == 1 && TrainingController.allowMonster(mainObject2) && !mainObject2.isLuaThieng() && ((distance = MainObject.getDistance(this.x, this.y, mainObject2.x, mainObject2.y)) < i || mainObject2.typeBoss == 2)) {
                 i = distance;
                 mainObject = mainObject2;
                 if (mainObject2.typeBoss == 2) {
