@@ -9,6 +9,7 @@ import Main.GameCanvas;
 import Thread_More.LoadMap;
 import InterfaceComponents.iCommand;
 import netcommand.global.GlobalService;
+import tools.trading.TradeController;
 
 /**
  * Client-side training / death-recovery state machine.
@@ -61,6 +62,10 @@ public final class TrainingController {
     public static void toggle() {
         if (TrainingSettings.isEnabled()) {
             stop("Da tat.");
+            return;
+        }
+        if (TradeController.isRecording() || TradeController.isRunning()) {
+            notice("Hay dung Auto Di Buon truoc khi bat luyen cap.");
             return;
         }
         Player p = GameScreen.player;
