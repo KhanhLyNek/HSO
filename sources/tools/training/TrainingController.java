@@ -260,7 +260,7 @@ public final class TrainingController {
         int bestScore = TargetPolicy.INVALID;
         MainObject current = GameScreen.ObjFocus;
         int currentScore = TargetPolicy.INVALID;
-        int detected = 0;
+        int detected = 0, sumLevel = 0;
         int maxRange = TrainingSettings.getMaximumRange();
         for (int j = 0; j < patrolCount; j++) nearbyDensity[j] = 0;
         for (int i = 0; i < GameScreen.Vecplayers.size(); i++) {
@@ -273,6 +273,7 @@ public final class TrainingController {
                     true, mob.typeBoss != 0 || mob.isDie || mob.isSend);
             if (score == TargetPolicy.INVALID) continue;
             detected++;
+            sumLevel += mob.Lv;
             if (TrainingSettings.isPatrolEnabled() && patrolCount > 1) {
                 for (int j = 0; j < patrolCount; j++) {
                     if (MainObject.getDistance(mob.x, mob.y, patrolX[j], patrolY[j]) < 150)
@@ -284,7 +285,7 @@ public final class TrainingController {
             if (score > bestScore) { best = mob; bestScore = score; }
         }
         candidates = detected;
-        if (detected > 0) WorldTraveler.observeMonsters(p.Lv, detected);
+        if (detected > 0) WorldTraveler.observeMonsters(sumLevel / detected, detected);
         if (TrainingSettings.isPatrolEnabled() && patrolCount > 1) {
             for (int j = 0; j < patrolCount; j++) {
                 if (MainObject.getDistance(p.x, p.y, patrolX[j], patrolY[j]) < 260)
@@ -360,8 +361,8 @@ public final class TrainingController {
             }
         }
         Player.isAutoFire = (byte) 0;
-        if (p.posTransRoad == null) moveNear(p, destinationX, destinationY, false);
-        if (pathFailures >= 4) {
+        int moveResult = SmartNavigator.approach(p, destinationX, destinationY, LoadMap.wTile * 2);
+        if (moveResult == SmartNavigator.FAILED) {
             stop("Không tìm được đường tuần tra.");
         }
     }
