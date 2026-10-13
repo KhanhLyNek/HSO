@@ -21,7 +21,7 @@ public final class BytecodePatcher implements Opcodes {
     private static final String BRIDGE = "tools/ui/ToolMenus";
     private static final String VECTOR = "LCLib/mVector;ILjava/lang/String;ZLCLib/mVector;";
     private static final String START_DESC = "(" + VECTOR + ")V";
-    private static int menus, functions, autos, shows, actions, quick, quickDispatch, ticks, before, after, dynamic;
+    private static int menus, functions, autos, shows, actions, quick, quickDispatch, ticks, targets, before, after, dynamic;
 
     private static void require(boolean ok, String message) {
         if (!ok) throw new IllegalStateException("Patch validation failed: " + message);
@@ -58,6 +58,16 @@ public final class BytecodePatcher implements Opcodes {
                             super.visitInsn(RETURN);
                             super.visitLabel(next);
                             quickDispatch++;
+                        } else if (className.equals("GameObjects/Player") &&
+                                   name.equals("nextMonster") && descriptor.equals("()V")) {
+                            super.visitVarInsn(ALOAD, 0);
+                            super.visitMethodInsn(INVOKESTATIC, BRIDGE, "onNextMonster",
+                                "(LGameObjects/Player;)Z", false);
+                            Label proceed = new Label();
+                            super.visitJumpInsn(IFEQ, proceed);
+                            super.visitInsn(RETURN);
+                            super.visitLabel(proceed);
+                            targets++;
                         } else if (className.equals("netcommand/global/ReadMessenge") && name.equals("changeMap")) {
                             super.visitMethodInsn(INVOKESTATIC, "tools/trading/TradeController",
                                 "beforeMapChange", "()V", false);
@@ -71,8 +81,7 @@ public final class BytecodePatcher implements Opcodes {
                         if (className.equals("Model/Menu2") && name.equals("setAt_Quick") &&
                             opcode == PUTFIELD && owner.equals("Model/Menu2") &&
                             field.equals("menuItems") && desc.equals("LCLib/mVector;")) {
-                            insertQuickCommand("Auto UP Level", 15);
-                            insertQuickCommand("Auto Di Buon", 16);
+                            insertQuickCommand("LyMeowz - Công cụ", 15);
                             quick++;
                         }
                     }
@@ -221,11 +230,12 @@ public final class BytecodePatcher implements Opcodes {
         require(quick == 1, "Menu2.setAt_Quick: " + quick);
         require(quickDispatch == 1, "Menu2.commandPointer: " + quickDispatch);
         require(ticks >= 1, "Player.update: " + ticks);
+        require(targets == 1, "Player.nextMonster override: " + targets);
         require(before == 1 && after >= 1, "ReadMessenge.changeMap");
         require(dynamic == 1, "ReadMessenge.Dynamic_Menu");
         System.out.println("Bytecode integration PASS: main="+menus+" functions="+functions+
                 " auto="+autos+" show="+shows+" command="+actions+" quick="+quick+
-                " quickCommand="+quickDispatch+" playerTick="+ticks+" map="+before+
+                " quickCommand="+quickDispatch+" playerTick="+ticks+" targetOverride="+targets+" map="+before+
                 "/"+after+" npcMenu="+dynamic);
     }
 }
