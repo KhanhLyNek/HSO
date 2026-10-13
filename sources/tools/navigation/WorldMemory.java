@@ -45,6 +45,11 @@ public final class WorldMemory {
         if (visitCount[i] < 1000) visitCount[i]++;
     }
 
+    public String nameOf(int mapId) {
+        int i = index(mapId);
+        return i < 0 ? "" : names[i];
+    }
+
     public int visitsByName(String text) {
         if (text == null) return 0;
         String target = text.trim().toLowerCase();
