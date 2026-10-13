@@ -1,4 +1,4 @@
-name: HSO Auto Tools J2ME JAR build
+name: HSO LyMeowz Smart Tools J2ME build
 
 on:
   push:
@@ -33,12 +33,45 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p build/mod-classes build/patcher-classes build/patch-classes build/jar-root
-          javac --release 8 -cp resources -d build/mod-classes \
+          javac --release 8 -encoding UTF-8 -cp resources -d build/mod-classes \
             sources/tools/trading/TradeRoute.java \
             sources/tools/trading/TradeController.java \
+            sources/tools/training/TargetPolicy.java \
             sources/tools/training/TrainingSettings.java \
             sources/tools/training/TrainingController.java \
+            sources/tools/boss/BossController.java \
             sources/tools/ui/ToolMenus.java
+
+      - name: Run Smart AI target and convoy-route unit tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/unit-test
+          javac --release 8 -encoding UTF-8 -d build/unit-test \
+            sources/tools/training/TargetPolicy.java \
+            tests/tools/training/TargetPolicyTest.java \
+            sources/tools/trading/TradeRoute.java \
+            tests/tools/trading/TradeRouteTest.java
+          java -cp build/unit-test tools.training.TargetPolicyTest
+          java -cp build/unit-test tools.trading.TradeRouteTest
+
+      - name: Verify Vietnamese menu glyph coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import pathlib, re
+          original=pathlib.Path("sources/CLib/mFont.java").read_text(encoding="utf-8")
+          allowed=set(re.search(r'public static String str = "([^"]*)"',original).group(1))
+          for path in pathlib.Path("sources/tools").rglob("*.java"):
+              source=path.read_text(encoding="utf-8")
+              for raw in re.findall(r'"([^"\\]*(?:\\.[^"\\]*)*)"',source):
+                  bad={ch for ch in raw if ch not in allowed}
+                  if bad:
+                      raise AssertionError("%s contains missing font glyphs: %r in %r" %
+                                           (path, "".join(sorted(bad)),raw))
+          print("Vietnamese sprite-font glyph audit: PASS")
+          PY
 
       - name: Compile the J2ME bytecode patcher
         shell: bash
@@ -128,6 +161,8 @@ jobs:
             "tools/ui/ToolMenus.class",
             "tools/training/TrainingController.class",
             "tools/training/TrainingSettings.class",
+            "tools/training/TargetPolicy.class",
+            "tools/boss/BossController.class",
             "tools/trading/TradeController.class",
             "tools/trading/TradeRoute.class",
           ]
@@ -150,7 +185,7 @@ jobs:
       - name: Publish completed J2ME JAR
         uses: actions/upload-artifact@v4
         with:
-          name: HSO-AutoTools-CLDC-JAR
+          name: HSO-LyMeowz-Smart-CLDC-JAR
           path: build/HSO-AutoTools-CLDC.jar
           if-no-files-found: error
 
