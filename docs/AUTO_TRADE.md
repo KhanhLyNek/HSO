@@ -23,9 +23,9 @@ This module lives on `feature/training-assistant-20261013`. It does not modify `
 6. At each inter-map gate, the tool **pauses** and asks you to cross normally; it resumes after the server confirms the *expected* map and area.
 7. On arrival, the tool stops and prompts you to sell through the ordinary NPC shop.
 
-Other options: **Dung di buon**, **Trang thai di buon**, **Giu khoang cach thu (96/144/192)**, **Luu NPC mua hang**, **Luu NPC ban hang**.
+Other options: **Dung di buon**, **Trang thai di buon**, **Giu khoang cach thu (96/144/192)**, **Luu NPC mua hang**, **Luu NPC ban hang**, **Mo NPC mua hang**, **Mo NPC ban hang**.
 
-NPC saving currently records the selected NPC's identifier for future use; it does not initiate commerce automatically.
+NPC saving records the selected NPC's identifier. The corresponding **Mo NPC** menu command can open that NPC's original conversation when it is nearby. If the destination merchant is saved, the tool also attempts to open the normal NPC conversation after reaching the recorded endpoint. It does **not** confirm buying/selling automatically.
 
 ## Safeguards
 
