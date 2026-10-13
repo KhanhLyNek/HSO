@@ -82,8 +82,8 @@ jobs:
             https://repo.maven.apache.org/maven2/net/sf/proguard/proguard-base/6.2.2/proguard-base-6.2.2.jar \
             --output build/proguard.jar
           cat > build/proguard.pro <<'EOF'
-          -injars build/HSO-AutoTools-Unverified.jar
-          -outjars build/HSO-AutoTools-CLDC.jar
+          -injars HSO-AutoTools-Unverified.jar
+          -outjars HSO-AutoTools-CLDC.jar
           -dontshrink
           -dontoptimize
           -dontobfuscate
