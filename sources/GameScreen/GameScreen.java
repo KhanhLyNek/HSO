@@ -44,6 +44,7 @@ import Model.CRes;
 import Model.CharCountDown;
 import Model.EffectManager;
 import Model.Menu2;
+import tools.training.TrainingSettings;
 import Model.Point;
 import Model.T;
 import Thread_More.LoadMap;
@@ -146,6 +147,8 @@ public class GameScreen extends MainScreen {
     public iCommand cmdThachDau = new iCommand(T.thachdau, 20, this);
     public iCommand cmdAutoBuff = new iCommand(T.autoBuff, 21, this);
     public iCommand cmdShowAuto = new iCommand(T.info, 22, this);
+    public iCommand cmdTrainingMenu = new iCommand("Luyen cap", 180, this);
+    public iCommand cmdTrainingToggle = new iCommand("Bat/Tat luyen cap", 181, this);
     public iCommand cmdInfoVantieu = new iCommand(T.info, 27, this);
     public iCommand cmdQuickChat = new iCommand(T.chat, 28, this);
     public iCommand cmdplayerStore = new iCommand(T.gianHang, 30, this);
@@ -293,6 +296,7 @@ public class GameScreen extends MainScreen {
             this.cmdAutoMPHP.caption = new StringBuffer().append(T.on).append(T.autoHP).toString();
         }
         mvector.addElement(this.cmdAutoMPHP);
+        mvector.addElement(this.cmdTrainingMenu);
         if (help.Step >= 0) {
             mvector.addElement(this.cmdEndHelp);
         }
@@ -406,6 +410,13 @@ public class GameScreen extends MainScreen {
                     List_Server.gI().Show(this);
                     break;
                 }
+            case 180:
+                this.openTrainingMenu();
+                break;
+            case 181:
+                TrainingSettings.toggle();
+                this.openTrainingMenu();
+                break;
             case 16:
                 if (Player.isAutoFire > -1) {
                     Player.isAutoFire = (byte) -1;
@@ -1104,6 +1115,13 @@ public class GameScreen extends MainScreen {
                 GameCanvas.menu2.startAt(mvector2, 2, T.TuseNgua, false, null);
             }
         }
+    }
+
+    public void openTrainingMenu() {
+        mVector entries = new mVector("Training menu");
+        this.cmdTrainingToggle.caption = TrainingSettings.isEnabled() ? "Tat luyen cap" : "Bat luyen cap";
+        entries.addElement(this.cmdTrainingToggle);
+        GameCanvas.menu2.startAt(entries, 2, "Luyen cap", false, null);
     }
 
     public void doMenuAuto() {
