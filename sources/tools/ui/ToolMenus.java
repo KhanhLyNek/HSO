@@ -13,6 +13,7 @@ import tools.trading.TradeController;
 import tools.training.AutoFarmExplorer;
 import tools.navigation.WorldTraveler;
 import tools.quest.QuestAssistant;
+import tools.core.SuperToolEngine;
 
 /**
  * Unified LyMeowz menu. Keeps existing game menus intact and exposes one
@@ -103,6 +104,7 @@ public final class ToolMenus {
         choices.addElement(action("Nhiệm vụ tự động", 100));
         choices.addElement(action(T.tabhanhtrang, 1));
         choices.addElement(action("Tiện ích & trạng thái", 99));
+        choices.addElement(action("Dừng tất cả Auto", 72));
         choices.addElement(action("Về menu trò chơi", 70));
         show("LyMeowz - Trung tâm", choices);
     }
@@ -216,6 +218,8 @@ public final class ToolMenus {
         mVector choices = items("Tiện ích");
         choices.addElement(action("Tổng quan các tool", 120));
         choices.addElement(action("Trạng thái tìm đường", 110));
+        choices.addElement(action("Widget nhỏ: " + ToolHud.stateLabel(), 71));
+        choices.addElement(action("Dừng tất cả Auto", 72));
         choices.addElement(action("Thông tin phiên bản", 121));
         choices.addElement(action("Quay lại LyMeowz", 117));
         show("LyMeowz - Tiện ích", choices);
@@ -229,6 +233,8 @@ public final class ToolMenus {
     public static boolean dispatch(int id) {
         switch (id) {
             case 70: GameScreen.gI().doMenu(); return true;
+            case 71: ToolHud.toggle(); openUtilities(); return true;
+            case 72: SuperToolEngine.stopAll(); openHub(); return true;
             case 80: openHub(); return true;
             case 97: openTrainingMenu(); return true;
             case 100: openQuestMenu(); return true;
@@ -313,12 +319,27 @@ public final class ToolMenus {
     }
 
     public static boolean quickAction(int id) {
-        if (id == 15 || id == 16) {
-            GameCanvas.menu2.isShowMenu = false;
-            openHub();
-            return true;
+        if (id != 15 && id != 16) return false;
+        // Native HSO menus can reuse IDs 15 and 16. Only intercept them
+        // inside the touch quick bar that actually contains our shortcut.
+        Menu2 menu = GameCanvas.menu2;
+        if (menu == null || !menu.isShowMenu || menu.menuItems == null)
+            return false;
+        boolean isLyMeowzQuick = false;
+        for (int i = 0; i < menu.menuItems.size(); i++) {
+            Object entry = menu.menuItems.elementAt(i);
+            if (!(entry instanceof iCommand)) continue;
+            iCommand cmd = (iCommand) entry;
+            if (cmd.indexMenu == (byte) 15 &&
+                    "LyMeowz - Công cụ".equals(cmd.caption)) {
+                isLyMeowzQuick = true;
+                break;
+            }
         }
-        return false;
+        if (!isLyMeowzQuick || id != 15) return false;
+        menu.isShowMenu = false;
+        openHub();
+        return true;
     }
 
     public static void showDynamic(Menu2 menu, mVector choices, int place,
@@ -329,14 +350,10 @@ public final class ToolMenus {
     }
 
     public static boolean onNextMonster(GameObjects.Player player) {
-        if (TrainingController.selectNextMonster(player)) return true;
-        return BossController.selectNextMonster(player);
+        return SuperToolEngine.onNextMonster(player);
     }
 
     public static void playerTick(GameObjects.Player player) {
-        QuestAssistant.observeNPCs();
-        TrainingController.tick(player);
-        BossController.tick(player);
-        TradeController.tick(player);
+        SuperToolEngine.tick(player);
     }
 }
