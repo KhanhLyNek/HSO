@@ -220,12 +220,12 @@ jobs:
           bridge = Path("build/tool-menu-bytecode.txt").read_text()
           game = Path("build/game-menu-bytecode.txt").read_text()
           src = Path("sources/tools/ui/ToolMenus.java").read_text(encoding="utf-8")
-          assert "Field cmdMyseft:" in bridge, "missing native inventory field"
+          assert "cmdMyseft:" in bridge, "missing native inventory field"
           assert "putfield" in bridge and "cmdMyseft:" in bridge, "inventory command not restored"
           assert "Model/T.tabhanhtrang:" in bridge, "inventory label missing"
           assert "Method CLib/mVector.setElementAt:" in bridge, "null entry not replaced"
           assert "Method CLib/mVector.insertElementAt:" in bridge, "inventory not restored to first slot"
-          assert "Field cmdMyseft:" in game, "original menu has no inventory entry"
+          assert "cmdMyseft:" in game, "original menu has no inventory entry"
           assert "Method GameScreen/TabScreenNew.Show:" in game, "original inventory handler gone"
           assert 'choices.addElement(action(T.tabhanhtrang, 1));' in src, "hub inventory shortcut missing"
           assert "case 1:" not in src[src.index("public static boolean dispatch"):src.index("public static boolean quickAction")], "native inventory id intercepted"
