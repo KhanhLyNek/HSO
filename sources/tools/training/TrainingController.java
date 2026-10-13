@@ -14,6 +14,7 @@ import tools.boss.BossController;
 import tools.navigation.SmartNavigator;
 import tools.navigation.WorldTraveler;
 import tools.quest.QuestAssistant;
+import tools.recovery.RecoverySnapshot;
 
 /**
  * Client-side training / death-recovery state machine.
@@ -40,6 +41,7 @@ public final class TrainingController {
     private static long enteredAt, lastMove;
     private static int pathFailures, menuDepth, recoveryRetries;
     private static boolean homeSent, areaSent, previousAutoHp;
+    private static final RecoverySnapshot recovery = new RecoverySnapshot();
     private static int recoveryPathFailures;
     private static long recoveryStarted;
 
@@ -181,6 +183,8 @@ public final class TrainingController {
         selectedAt = startedAt;
         selectedTargetId = -1;
         patrolIndex = 0;
+        recovery.clear();
+        recovery.recordAlive(mapId, area, p.x, p.y, mapName, mSystem.currentTimeMillis());
         AutoFarmExplorer.reset();
         recoveryPathFailures = 0;
         enter(TRAIN);
@@ -195,6 +199,7 @@ public final class TrainingController {
         }
         TrainingSettings.stop();
         state = IDLE;
+        recovery.clear();
         AutoFarmExplorer.reset();
         SmartNavigator.reset(GameScreen.player);
         Player.isAutoFire = (byte) -1;
@@ -375,11 +380,17 @@ public final class TrainingController {
             stop("Da chet - tu quay lai dang tat.");
             return;
         }
-        mapId = GameCanvas.loadmap.idMap;
-        mapName = GameCanvas.loadmap.nameMap;
-        area = LoadMap.Area;
-        spotX = p.x;
-        spotY = p.y;
+        if (GameCanvas.loadmap == null) {
+            stop("Không có bản đồ để lưu vị trí chết.");
+            return;
+        }
+        recovery.captureDeath(GameCanvas.loadmap.idMap, LoadMap.Area,
+                p.x, p.y, GameCanvas.loadmap.nameMap, mSystem.currentTimeMillis());
+        mapId = recovery.mapId();
+        mapName = recovery.mapName();
+        area = (byte) recovery.area();
+        spotX = recovery.x();
+        spotY = recovery.y();
         homeSent = false;
         areaSent = false;
         recoveryRetries = 0;
@@ -403,6 +414,11 @@ public final class TrainingController {
             return;
         }
         if (state == TRAIN) {
+            if (p.hp > 0 && p.Action != 4 &&
+                    GameCanvas.currentScreen == GameCanvas.game) {
+                recovery.recordAlive(GameCanvas.loadmap.idMap, LoadMap.Area,
+                        p.x, p.y, GameCanvas.loadmap.nameMap, mSystem.currentTimeMillis());
+            }
             if (p.hp <= 0 || p.Action == 4) {
                 onDeath(p);
                 return;
@@ -548,6 +564,8 @@ public final class TrainingController {
             if (MainObject.getDistance(p.x, p.y, spotX, spotY) <= LoadMap.wTile * 2) {
                 p.posTransRoad = null;
                 enter(TRAIN);
+                recovery.clear();
+                recovery.recordAlive(mapId, area, p.x, p.y, mapName, mSystem.currentTimeMillis());
                 selectedTargetId = -1;
                 lastMonsterFound = mSystem.currentTimeMillis();
                 p.dofire_();
