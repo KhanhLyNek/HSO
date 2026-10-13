@@ -277,6 +277,10 @@ public final class TradeController {
         if (GameCanvas.currentScreen != GameCanvas.game ||
                 GameCanvas.currentDialog != null || GameCanvas.subDialog != null ||
                 GameCanvas.menu2.isShowMenu) {
+            // A normal dialog or an anti-bot verification prompt requires
+            // human handling. Never walk through it with a queued trade route.
+            p.posTransRoad = null;
+            Player.isAutoFire = (byte) -1;
             return;
         }
         MainObject animal = findOwnedAnimal(p);
