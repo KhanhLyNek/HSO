@@ -70,6 +70,13 @@ public final class BossController {
         notice(reason);
     }
 
+    public static boolean selectNextMonster(Player p) {
+        if (!enabled) return false;
+        lastScan = 0;
+        tick(p);
+        return true;
+    }
+
     public static void tick(Player p) {
         if (!enabled) return;
         if (p == null || !playerName.equals(p.name) || p.hp <= 0 || p.Action == 4) {
