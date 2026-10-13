@@ -29,6 +29,7 @@ public final class TradeController {
     private static int state = OFF;
     private static int index;
     private static long enteredAt, missingPackSince, lastMove, lastPackWarning;
+    private static long journeyStart, awaitingInfoSince;
     private static int pathErrors, lastMap = -1, delayDistance = 144;
     private static String character = "";
     private static String originName = "";
@@ -151,6 +152,8 @@ public final class TradeController {
         hasPack = true;
         missingPackSince = 0;
         warnedTime = false;
+        journeyStart = now();
+        awaitingInfoSince = 0;
         lastMap = GameCanvas.loadmap.idMap;
         state(RUN);
         say("Bat dau dan hang. Se dung tai cong chuyen map.");
@@ -263,8 +266,14 @@ public final class TradeController {
         missingPackSince = 0;
         if (!animal.isInfo) {
             p.posTransRoad = null;
+            if (awaitingInfoSince == 0) awaitingInfoSince = now();
+            if (now() - awaitingInfoSince > 12000L) {
+                stop();
+                say("Server chua gui thong tin thu hang.");
+            }
             return;
         }
+        awaitingInfoSince = 0;
         if (animal.Action == 4 || animal.hp <= 0) {
             stop();
             say("Con vat cho hang da chet.");
@@ -274,6 +283,10 @@ public final class TradeController {
                 now() - lastPackWarning > 10000L) {
             lastPackWarning = now();
             say("Canh bao: thu hang duoi 25% mau!");
+        }
+        if (!warnedTime && now() - journeyStart > 23L * 60L * 1000L) {
+            warnedTime = true;
+            say("Da di buon hon 23 phut - kiem tra thoi gian thu hang.");
         }
         int gap = MainObject.getDistance(p.x, p.y, animal.x, animal.y);
         if (gap > delayDistance) {
