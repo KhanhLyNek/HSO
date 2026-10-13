@@ -68,17 +68,17 @@ public final class TrainingController {
     public static String status() {
         String[] labels = {"Tắt", "Đang luyện", "Về làng", "Tìm đá dịch chuyển",
                 "Chờ menu dịch chuyển", "Chờ vào bản đồ", "Trở lại vị trí"};
-        return labels[state] + " | Bản đồ " + mapId + " (" + spotX + "," + spotY +
-                ") | Quái " + candidates + " | Mốc " + patrolCount;
+        return labels[state] + " - Bản đồ " + mapId + " (" + spotX + "," + spotY +
+                ") - Quái " + candidates + " - Mốc " + patrolCount;
     }
 
     public static String statistics() {
         Player p = GameScreen.player;
         long minutes = startedAt > 0 ? (mSystem.currentTimeMillis() - startedAt) / 60000L : 0;
         if (p == null) return "Chưa có dữ liệu nhân vật.";
-        return "Luyện " + minutes + " phút | Cấp " + startingLevel + "→" + p.Lv +
-                " | Tiến trình " + startingProgress + "→" + p.phantramLv +
-                " | Đổi quái " + retargets + " lần.";
+        return "Luyện " + minutes + " phút - Cấp " + startingLevel + " đến " + p.Lv +
+                " - Tiến trình " + startingProgress + " đến " + p.phantramLv +
+                " - Đổi quái " + retargets + " lần.";
     }
 
     public static int getPatrolCount() { return patrolCount; }
@@ -514,7 +514,7 @@ public final class TrainingController {
             pathFailures++;
             return;
         }
-        int end = ((tx & 255) << 8) | (ty & 255);
+        int end = ((tx & 255) << 8) - (ty & 255);
         if (route == null || route.length < 2
                 || (route[route.length - 1] & 65535) != end) {
             pathFailures++;
