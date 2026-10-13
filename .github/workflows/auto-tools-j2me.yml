@@ -156,7 +156,7 @@ jobs:
           python3 - <<'PY'
           import pathlib, zipfile
           root = pathlib.Path("build/jar-root")
-          with zipfile.ZipFile("build/HSO-AutoTools-CLDC.jar", "w", zipfile.ZIP_DEFLATED) as out:
+          with zipfile.ZipFile("build/LyMeowz-SuperAuto-3.0.jar", "w", zipfile.ZIP_DEFLATED) as out:
               for file in sorted(root.rglob("*")):
                   if file.is_file():
                       out.write(file, file.relative_to(root).as_posix())
@@ -168,7 +168,7 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           import struct, zipfile
-          path="build/HSO-AutoTools-CLDC.jar"
+          path="build/LyMeowz-SuperAuto-3.0.jar"
           required=[
             "META-INF/MANIFEST.MF",
             "GameScreen/GameScreen.class",
@@ -204,14 +204,14 @@ jobs:
               print(name, "classfile", major, "bytes", len(data))
             print("Total",len(names),"entries, JAR integrity OK")
           PY
-          javap -v -classpath build/HSO-AutoTools-CLDC.jar tools.ui.ToolMenus \
+          javap -v -classpath build/LyMeowz-SuperAuto-3.0.jar tools.ui.ToolMenus \
             | grep -m1 -E 'StackMap:|StackMapTable:' || true
 
       - name: Publish completed J2ME JAR
         uses: actions/upload-artifact@v4
         with:
           name: HSO-LyMeowz-SuperAuto-3-JAR
-          path: build/HSO-AutoTools-CLDC.jar
+          path: build/LyMeowz-SuperAuto-3.0.jar
           if-no-files-found: error
 
       - name: Upload build diagnostics
