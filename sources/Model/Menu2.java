@@ -639,6 +639,9 @@ public class Menu2 extends AvMain {
             this.menuItems.addElement(new iCommand(T.party, 10, 7, this));
         }
         this.menuItems.addElement(icommand);
+        // Reuse the existing Auto icon frame; no extra sprites required.
+        this.menuItems.addElement(new iCommand("Auto UP Level", 15, 2, this));
+        this.menuItems.addElement(new iCommand("Auto Di Buon", 16, 2, this));
         this.menuItems.addElement(icommand3);
         if (!mSystem.isHideNaptien()) {
             this.menuItems.addElement(icommand6);
@@ -852,6 +855,14 @@ public class Menu2 extends AvMain {
                 if (mGraphics.zoomLevel > 1) {
                 }
                 Main.exit();
+                break;
+            case 15:
+                this.isShowMenu = false;
+                GameScreen.gI().openTrainingMenu();
+                break;
+            case 16:
+                this.isShowMenu = false;
+                GameScreen.gI().openTradeMenu();
                 break;
             case 14:
                 mVector mvector6 = new mVector("Menu2 vecngua");
