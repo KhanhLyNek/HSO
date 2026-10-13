@@ -1,4 +1,4 @@
-name: HSO LyMeowz Smart Tools J2ME build
+name: HSO LyMeowz Super Auto 3.0 J2ME build
 
 on:
   push:
@@ -40,6 +40,13 @@ jobs:
             sources/tools/training/PatrolBrain.java \
             sources/tools/training/TrainingSettings.java \
             sources/tools/training/TrainingController.java \
+            sources/tools/training/AutoFarmExplorer.java \
+            sources/tools/navigation/TilePathfinder.java \
+            sources/tools/navigation/SmartNavigator.java \
+            sources/tools/navigation/WorldMemory.java \
+            sources/tools/navigation/WorldTraveler.java \
+            sources/tools/navigation/LocalSurvey.java \
+            sources/tools/quest/QuestAssistant.java \
             sources/tools/boss/BossController.java \
             sources/tools/ui/ToolMenus.java
 
@@ -54,10 +61,16 @@ jobs:
             sources/tools/training/PatrolBrain.java \
             tests/tools/training/PatrolBrainTest.java \
             sources/tools/trading/TradeRoute.java \
-            tests/tools/trading/TradeRouteTest.java
+            tests/tools/trading/TradeRouteTest.java \
+            sources/tools/navigation/TilePathfinder.java \
+            tests/tools/navigation/TilePathfinderTest.java \
+            sources/tools/navigation/WorldMemory.java \
+            tests/tools/navigation/WorldMemoryTest.java
           java -cp build/unit-test tools.training.TargetPolicyTest
           java -cp build/unit-test tools.training.PatrolBrainTest
           java -cp build/unit-test tools.trading.TradeRouteTest
+          java -cp build/unit-test tools.navigation.TilePathfinderTest
+          java -cp build/unit-test tools.navigation.WorldMemoryTest
 
       - name: Verify Vietnamese menu glyph coverage
         shell: bash
@@ -167,6 +180,13 @@ jobs:
             "tools/training/TrainingSettings.class",
             "tools/training/TargetPolicy.class",
             "tools/training/PatrolBrain.class",
+            "tools/training/AutoFarmExplorer.class",
+            "tools/navigation/TilePathfinder.class",
+            "tools/navigation/SmartNavigator.class",
+            "tools/navigation/WorldMemory.class",
+            "tools/navigation/WorldTraveler.class",
+            "tools/navigation/LocalSurvey.class",
+            "tools/quest/QuestAssistant.class",
             "tools/boss/BossController.class",
             "tools/trading/TradeController.class",
             "tools/trading/TradeRoute.class",
@@ -190,7 +210,7 @@ jobs:
       - name: Publish completed J2ME JAR
         uses: actions/upload-artifact@v4
         with:
-          name: HSO-LyMeowz-Smart-CLDC-JAR
+          name: HSO-LyMeowz-SuperAuto-3-JAR
           path: build/HSO-AutoTools-CLDC.jar
           if-no-files-found: error
 
