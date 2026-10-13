@@ -306,6 +306,7 @@ public final class ToolMenus {
     }
 
     public static void playerTick(GameObjects.Player player) {
+        QuestAssistant.observeNPCs();
         TrainingController.tick(player);
         BossController.tick(player);
         TradeController.tick(player);
