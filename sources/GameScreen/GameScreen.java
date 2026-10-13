@@ -46,6 +46,7 @@ import Model.EffectManager;
 import Model.Menu2;
 import tools.training.TrainingSettings;
 import tools.training.TrainingController;
+import tools.trading.TradeController;
 import Model.Point;
 import Model.T;
 import Thread_More.LoadMap;
@@ -154,6 +155,15 @@ public class GameScreen extends MainScreen {
     public iCommand cmdTrainingStone = new iCommand("Luu NPC dich chuyen", 183, this);
     public iCommand cmdTrainingRadius = new iCommand("Pham vi chien dau", 184, this);
     public iCommand cmdTrainingStatus = new iCommand("Xem trang thai", 185, this);
+    public iCommand cmdTradeMenu = new iCommand("Auto Di Buon", 186, this);
+    public iCommand cmdTradeRecord = new iCommand("Ghi tuyen mua-den-ban", 187, this);
+    public iCommand cmdTradeSave = new iCommand("Ket thuc ghi tuyen", 188, this);
+    public iCommand cmdTradeRun = new iCommand("Bat dau dan hang", 189, this);
+    public iCommand cmdTradeStop = new iCommand("Dung di buon", 190, this);
+    public iCommand cmdTradeStatus = new iCommand("Trang thai di buon", 191, this);
+    public iCommand cmdTradeDistance = new iCommand("Khoang cach thu", 192, this);
+    public iCommand cmdTradeDylan = new iCommand("Luu NPC mua hang", 193, this);
+    public iCommand cmdTradeGraham = new iCommand("Luu NPC ban hang", 194, this);
     public iCommand cmdInfoVantieu = new iCommand(T.info, 27, this);
     public iCommand cmdQuickChat = new iCommand(T.chat, 28, this);
     public iCommand cmdplayerStore = new iCommand(T.gianHang, 30, this);
@@ -415,6 +425,41 @@ public class GameScreen extends MainScreen {
                     List_Server.gI().Show(this);
                     break;
                 }
+            case 186:
+                this.openTradeMenu();
+                break;
+            case 187:
+                TradeController.startRecording();
+                this.openTradeMenu();
+                break;
+            case 188:
+                TradeController.finishRecording();
+                this.openTradeMenu();
+                break;
+            case 189:
+                TradeController.beginEscort();
+                this.openTradeMenu();
+                break;
+            case 190:
+                TradeController.stop();
+                this.openTradeMenu();
+                break;
+            case 191:
+                GameCanvas.addInfoChar(TradeController.status());
+                this.openTradeMenu();
+                break;
+            case 192:
+                TradeController.cycleDistanceLimit();
+                this.openTradeMenu();
+                break;
+            case 193:
+                TradeController.captureSourceNpc();
+                this.openTradeMenu();
+                break;
+            case 194:
+                TradeController.captureDestinationNpc();
+                this.openTradeMenu();
+                break;
             case 180:
                 this.openTrainingMenu();
                 break;
@@ -1119,6 +1164,7 @@ public class GameScreen extends MainScreen {
             mvector.addElement(this.cmdGiaotiep);
         }
         mvector.addElement(this.cmdChangeMap);
+        mvector.addElement(this.cmdTradeMenu);
         GameCanvas.menu2.startAt(mvector, 2, T.menuChinh, false, null);
         if (help.setStep_Next(1, 9) || help.setStep_Next(6, 2)) {
             Menu2.isHelp = true;
@@ -1137,6 +1183,20 @@ public class GameScreen extends MainScreen {
                 GameCanvas.menu2.startAt(mvector2, 2, T.TuseNgua, false, null);
             }
         }
+    }
+
+    public void openTradeMenu() {
+        mVector entries = new mVector("Trade menu");
+        this.cmdTradeDistance.caption = "Giu khoang cach thu: " + TradeController.getDistanceLimit();
+        entries.addElement(this.cmdTradeRecord);
+        entries.addElement(this.cmdTradeSave);
+        entries.addElement(this.cmdTradeRun);
+        entries.addElement(this.cmdTradeStop);
+        entries.addElement(this.cmdTradeDistance);
+        entries.addElement(this.cmdTradeDylan);
+        entries.addElement(this.cmdTradeGraham);
+        entries.addElement(this.cmdTradeStatus);
+        GameCanvas.menu2.startAt(entries, 2, "Auto Di Buon", false, null);
     }
 
     public void openTrainingMenu() {
