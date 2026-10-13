@@ -37,6 +37,7 @@ jobs:
             sources/tools/trading/TradeRoute.java \
             sources/tools/trading/TradeController.java \
             sources/tools/training/TargetPolicy.java \
+            sources/tools/training/PatrolBrain.java \
             sources/tools/training/TrainingSettings.java \
             sources/tools/training/TrainingController.java \
             sources/tools/boss/BossController.java \
@@ -50,6 +51,8 @@ jobs:
           javac --release 8 -encoding UTF-8 -d build/unit-test \
             sources/tools/training/TargetPolicy.java \
             tests/tools/training/TargetPolicyTest.java \
+            sources/tools/training/PatrolBrain.java \
+            tests/tools/training/PatrolBrainTest.java \
             sources/tools/trading/TradeRoute.java \
             tests/tools/trading/TradeRouteTest.java
           java -cp build/unit-test tools.training.TargetPolicyTest
@@ -162,6 +165,7 @@ jobs:
             "tools/training/TrainingController.class",
             "tools/training/TrainingSettings.class",
             "tools/training/TargetPolicy.class",
+            "tools/training/PatrolBrain.class",
             "tools/boss/BossController.class",
             "tools/trading/TradeController.class",
             "tools/trading/TradeRoute.class",
