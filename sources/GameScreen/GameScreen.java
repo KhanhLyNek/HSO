@@ -60,7 +60,7 @@ public class GameScreen extends MainScreen {
     public static final byte PHAP_SU = 2;
     public static final byte XA_THU = 3;
     public static short[] idmap18;
-    public iCommand cmdMyseft;
+    public iCommand cmdMyseft = new iCommand(T.tabhanhtrang, 1, this);
     public static long timeCheckDelHash;
     public static int xMoveCam;
     public static int yMoveCam;
@@ -135,7 +135,7 @@ public class GameScreen extends MainScreen {
     public iCommand cmdChucNang = new iCommand(T.chucnang, 14);
     public iCommand cmdAddMemClan = new iCommand(T.addmemclan, 15);
     public iCommand cmdGiaotiep = new iCommand(T.giaotiep, 0, this);
-    public iCommand cmdMenu = new iCommand(T.menu, 1, this);
+    public iCommand cmdMenu = new iCommand(T.menu, 70, this);
     public iCommand cmdShowChat = new iCommand(T.tinnhan, 4, this);
     public iCommand cmdParty = new iCommand(T.party, 6, this);
     public iCommand cmdSetPk = new iCommand(T.setPk, 8, this);
@@ -149,23 +149,23 @@ public class GameScreen extends MainScreen {
     public iCommand cmdThachDau = new iCommand(T.thachdau, 20, this);
     public iCommand cmdAutoBuff = new iCommand(T.autoBuff, 21, this);
     public iCommand cmdShowAuto = new iCommand(T.info, 22, this);
-    public iCommand cmdTrainingMenu = new iCommand("Luyen cap", 180, this);
-    public iCommand cmdTrainingToggle = new iCommand("Bat/Tat luyen cap", 181, this);
-    public iCommand cmdTrainingReturn = new iCommand("Tu ve bai khi chet", 182, this);
-    public iCommand cmdTrainingStone = new iCommand("Luu NPC dich chuyen", 183, this);
-    public iCommand cmdTrainingRadius = new iCommand("Pham vi chien dau", 184, this);
-    public iCommand cmdTrainingStatus = new iCommand("Xem trang thai", 185, this);
-    public iCommand cmdTradeMenu = new iCommand("Auto Di Buon", 186, this);
-    public iCommand cmdTradeRecord = new iCommand("Ghi tuyen mua-den-ban", 187, this);
-    public iCommand cmdTradeSave = new iCommand("Ket thuc ghi tuyen", 188, this);
-    public iCommand cmdTradeRun = new iCommand("Bat dau dan hang", 189, this);
-    public iCommand cmdTradeStop = new iCommand("Dung di buon", 190, this);
-    public iCommand cmdTradeStatus = new iCommand("Trang thai di buon", 191, this);
-    public iCommand cmdTradeDistance = new iCommand("Khoang cach thu", 192, this);
-    public iCommand cmdTradeDylan = new iCommand("Luu NPC mua hang", 193, this);
-    public iCommand cmdTradeGraham = new iCommand("Luu NPC ban hang", 194, this);
-    public iCommand cmdTradeOpenBuy = new iCommand("Mo NPC mua hang", 195, this);
-    public iCommand cmdTradeOpenSell = new iCommand("Mo NPC ban hang", 196, this);
+    public iCommand cmdTrainingMenu = new iCommand("Luyen cap", 80, this);
+    public iCommand cmdTrainingToggle = new iCommand("Bat/Tat luyen cap", 81, this);
+    public iCommand cmdTrainingReturn = new iCommand("Tu ve bai khi chet", 82, this);
+    public iCommand cmdTrainingStone = new iCommand("Luu NPC dich chuyen", 83, this);
+    public iCommand cmdTrainingRadius = new iCommand("Pham vi chien dau", 84, this);
+    public iCommand cmdTrainingStatus = new iCommand("Xem trang thai", 85, this);
+    public iCommand cmdTradeMenu = new iCommand("Auto Di Buon", 86, this);
+    public iCommand cmdTradeRecord = new iCommand("Ghi tuyen mua-den-ban", 87, this);
+    public iCommand cmdTradeSave = new iCommand("Ket thuc ghi tuyen", 88, this);
+    public iCommand cmdTradeRun = new iCommand("Bat dau dan hang", 89, this);
+    public iCommand cmdTradeStop = new iCommand("Dung di buon", 90, this);
+    public iCommand cmdTradeStatus = new iCommand("Trang thai di buon", 91, this);
+    public iCommand cmdTradeDistance = new iCommand("Khoang cach thu", 92, this);
+    public iCommand cmdTradeDylan = new iCommand("Luu NPC mua hang", 93, this);
+    public iCommand cmdTradeGraham = new iCommand("Luu NPC ban hang", 94, this);
+    public iCommand cmdTradeOpenBuy = new iCommand("Mo NPC mua hang", 95, this);
+    public iCommand cmdTradeOpenSell = new iCommand("Mo NPC ban hang", 96, this);
     public iCommand cmdInfoVantieu = new iCommand(T.info, 27, this);
     public iCommand cmdQuickChat = new iCommand(T.chat, 28, this);
     public iCommand cmdplayerStore = new iCommand(T.gianHang, 30, this);
@@ -427,68 +427,71 @@ public class GameScreen extends MainScreen {
                     List_Server.gI().Show(this);
                     break;
                 }
-            case 186:
+            case 86:
                 this.openTradeMenu();
                 break;
-            case 187:
+            case 87:
                 TradeController.startRecording();
                 this.openTradeMenu();
                 break;
-            case 188:
+            case 88:
                 TradeController.finishRecording();
                 this.openTradeMenu();
                 break;
-            case 189:
+            case 89:
                 TradeController.beginEscort();
                 this.openTradeMenu();
                 break;
-            case 190:
+            case 90:
                 TradeController.stop();
                 this.openTradeMenu();
                 break;
-            case 191:
+            case 91:
                 GameCanvas.addInfoChar(TradeController.status());
                 this.openTradeMenu();
                 break;
-            case 192:
+            case 92:
                 TradeController.cycleDistanceLimit();
                 this.openTradeMenu();
                 break;
-            case 193:
+            case 93:
                 TradeController.captureSourceNpc();
                 this.openTradeMenu();
                 break;
-            case 194:
+            case 94:
                 TradeController.captureDestinationNpc();
                 this.openTradeMenu();
                 break;
-            case 195:
+            case 95:
                 TradeController.openSourceNpc();
                 break;
-            case 196:
+            case 96:
                 TradeController.openDestinationNpc();
                 break;
-            case 180:
+            case 70:
+                this.doMenu();
+                break;
+            case 80:
                 this.openTrainingMenu();
                 break;
-            case 181:
+            case 81:
                 TrainingController.toggle();
                 this.openTrainingMenu();
                 break;
-            case 182:
+            case 82:
                 TrainingSettings.toggleReturnAfterDeath();
                 this.openTrainingMenu();
                 break;
-            case 183:
+            case 83:
                 TrainingController.selectFocusedStone();
                 this.openTrainingMenu();
                 break;
-            case 184:
+            case 84:
                 int range = TrainingSettings.getMaximumRange();
                 TrainingSettings.setMaximumRange(range == 120 ? 180 : range == 180 ? 280 : 120);
                 this.openTrainingMenu();
                 break;
-            case 185:
+            case 85:
                 GameCanvas.addInfoChar(TrainingController.status());
                 this.openTrainingMenu();
                 break;
@@ -1248,6 +1251,8 @@ public class GameScreen extends MainScreen {
             this.cmdShowAuto.caption = new StringBuffer().append(T.off).append(T.showAuto).toString();
         }
         mvector.addElement(gI().cmdShowAuto);
+        mvector.addElement(gI().cmdTrainingMenu);
+        mvector.addElement(gI().cmdTradeMenu);
         GameCanvas.menu2.startAt(mvector, 2, T.auto, false, null);
     }
 
