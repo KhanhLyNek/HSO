@@ -200,6 +200,14 @@ public final class TrainingController {
                    <= TrainingSettings.getMaximumRange();
     }
 
+    /** Prevents the original nearest-monster routine selecting trade animals,
+     * quest targets, bosses or CAPTCHA when an automatic training mode is on. */
+    public static boolean selectNextMonster(Player p) {
+        if (!TrainingSettings.isEnabled() || state != TRAIN) return false;
+        smartTargetTick(p);
+        return true;
+    }
+
     /**
      * One scan per second (not per game frame). Keeps a target long enough to
      * finish an attack, and never selects boss, NPC, CAPTCHA or trader cargo.
