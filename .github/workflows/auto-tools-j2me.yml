@@ -82,8 +82,9 @@ jobs:
             https://repo.maven.apache.org/maven2/net/sf/proguard/proguard-base/6.2.2/proguard-base-6.2.2.jar \
             --output build/proguard.jar
           cat > build/proguard.pro <<'EOF'
-          -injars HSO-AutoTools-Unverified.jar
-          -outjars HSO-AutoTools-CLDC.jar
+          -injars patch-classes
+          -outjars HSO-AutoTools-Preverified-Patches.jar
+          -libraryjars ../resources
           -dontshrink
           -dontoptimize
           -dontobfuscate
@@ -94,6 +95,15 @@ jobs:
           -keep class * { *; }
           EOF
           java -cp build/proguard.jar proguard.ProGuard @build/proguard.pro
+          unzip -oq build/HSO-AutoTools-Preverified-Patches.jar -d build/jar-root
+          python3 - <<'PY'
+          import pathlib, zipfile
+          root = pathlib.Path("build/jar-root")
+          with zipfile.ZipFile("build/HSO-AutoTools-CLDC.jar", "w", zipfile.ZIP_DEFLATED) as out:
+              for file in sorted(root.rglob("*")):
+                  if file.is_file():
+                      out.write(file, file.relative_to(root).as_posix())
+          PY
 
       - name: Verify output JAR and preverification
         shell: bash
