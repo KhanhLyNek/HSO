@@ -45,6 +45,7 @@ import Model.CharCountDown;
 import Model.EffectManager;
 import Model.Menu2;
 import tools.training.TrainingSettings;
+import tools.training.TrainingController;
 import Model.Point;
 import Model.T;
 import Thread_More.LoadMap;
@@ -149,6 +150,10 @@ public class GameScreen extends MainScreen {
     public iCommand cmdShowAuto = new iCommand(T.info, 22, this);
     public iCommand cmdTrainingMenu = new iCommand("Luyen cap", 180, this);
     public iCommand cmdTrainingToggle = new iCommand("Bat/Tat luyen cap", 181, this);
+    public iCommand cmdTrainingReturn = new iCommand("Tu ve bai khi chet", 182, this);
+    public iCommand cmdTrainingStone = new iCommand("Luu NPC dich chuyen", 183, this);
+    public iCommand cmdTrainingRadius = new iCommand("Pham vi chien dau", 184, this);
+    public iCommand cmdTrainingStatus = new iCommand("Xem trang thai", 185, this);
     public iCommand cmdInfoVantieu = new iCommand(T.info, 27, this);
     public iCommand cmdQuickChat = new iCommand(T.chat, 28, this);
     public iCommand cmdplayerStore = new iCommand(T.gianHang, 30, this);
@@ -414,7 +419,24 @@ public class GameScreen extends MainScreen {
                 this.openTrainingMenu();
                 break;
             case 181:
-                TrainingSettings.toggle();
+                TrainingController.toggle();
+                this.openTrainingMenu();
+                break;
+            case 182:
+                TrainingSettings.toggleReturnAfterDeath();
+                this.openTrainingMenu();
+                break;
+            case 183:
+                TrainingController.selectFocusedStone();
+                this.openTrainingMenu();
+                break;
+            case 184:
+                int range = TrainingSettings.getMaximumRange();
+                TrainingSettings.setMaximumRange(range == 120 ? 180 : range == 180 ? 280 : 120);
+                this.openTrainingMenu();
+                break;
+            case 185:
+                GameCanvas.addInfoChar(TrainingController.status());
                 this.openTrainingMenu();
                 break;
             case 16:
@@ -1120,8 +1142,14 @@ public class GameScreen extends MainScreen {
     public void openTrainingMenu() {
         mVector entries = new mVector("Training menu");
         this.cmdTrainingToggle.caption = TrainingSettings.isEnabled() ? "Tat luyen cap" : "Bat luyen cap";
+        this.cmdTrainingReturn.caption = TrainingSettings.isReturnAfterDeath() ? "Tu ve bai: BAT" : "Tu ve bai: TAT";
+        this.cmdTrainingRadius.caption = "Pham vi: " + TrainingSettings.getMaximumRange();
         entries.addElement(this.cmdTrainingToggle);
-        GameCanvas.menu2.startAt(entries, 2, "Luyen cap", false, null);
+        entries.addElement(this.cmdTrainingReturn);
+        entries.addElement(this.cmdTrainingStone);
+        entries.addElement(this.cmdTrainingRadius);
+        entries.addElement(this.cmdTrainingStatus);
+        GameCanvas.menu2.startAt(entries, 2, "Auto UP Level", false, null);
     }
 
     public void doMenuAuto() {
