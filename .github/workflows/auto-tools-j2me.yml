@@ -207,6 +207,31 @@ jobs:
           javap -v -classpath build/LyMeowz-SuperAuto-3.0.jar tools.ui.ToolMenus \
             | grep -m1 -E 'StackMap:|StackMapTable:' || true
 
+      - name: Regression test - preserve original HSO inventory menu
+        shell: bash
+        run: |
+          set -euo pipefail
+          javap -c -p -classpath build/LyMeowz-SuperAuto-3.0.jar \
+            tools.ui.ToolMenus > build/tool-menu-bytecode.txt
+          javap -c -p -classpath build/LyMeowz-SuperAuto-3.0.jar \
+            GameScreen.GameScreen > build/game-menu-bytecode.txt
+          python3 - <<'PY'
+          from pathlib import Path
+          bridge = Path("build/tool-menu-bytecode.txt").read_text()
+          game = Path("build/game-menu-bytecode.txt").read_text()
+          src = Path("sources/tools/ui/ToolMenus.java").read_text(encoding="utf-8")
+          assert "Field cmdMyseft:" in bridge, "missing native inventory field"
+          assert "putfield" in bridge and "cmdMyseft:" in bridge, "inventory command not restored"
+          assert "Model/T.tabhanhtrang:" in bridge, "inventory label missing"
+          assert "Method CLib/mVector.setElementAt:" in bridge, "null entry not replaced"
+          assert "Method CLib/mVector.insertElementAt:" in bridge, "inventory not restored to first slot"
+          assert "Field cmdMyseft:" in game, "original menu has no inventory entry"
+          assert "Method GameScreen/TabScreenNew.Show:" in game, "original inventory handler gone"
+          assert 'choices.addElement(action(T.tabhanhtrang, 1));' in src, "hub inventory shortcut missing"
+          assert "case 1:" not in src[src.index("public static boolean dispatch"):src.index("public static boolean quickAction")], "native inventory id intercepted"
+          print("Inventory/menu regression PASS: native item restored, first slot kept, handler intact.")
+          PY
+
       - name: Publish completed J2ME JAR
         uses: actions/upload-artifact@v4
         with:
