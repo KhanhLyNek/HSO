@@ -22,7 +22,7 @@ public final class WorldTraveler {
     private static int currentTarget = -1, currentGateX = -1, currentGateY = -1;
     private static int currentGateExpected = -1, transitions;
     private static long lastGateProgress, lastMessage;
-    private static boolean awaitingTransition;
+    private static boolean awaitingTransition, gateTouchSent;
     private static int lastMapSeen = -1, currentArea = -1;
 
     private WorldTraveler() {}
@@ -56,6 +56,7 @@ public final class WorldTraveler {
         if (lastMapSeen != current) {
             if (awaitingTransition) transitions++;
             awaitingTransition = false;
+            gateTouchSent = false;
             currentTarget = -1;
             currentGateX = currentGateY = -1;
             lastMapSeen = current;
@@ -66,6 +67,7 @@ public final class WorldTraveler {
     public static void resetJourney() {
         transitions = 0;
         awaitingTransition = false;
+        gateTouchSent = false;
         currentTarget = currentGateX = currentGateY = -1;
     }
 
@@ -114,6 +116,30 @@ public final class WorldTraveler {
      * Auto recover: only use confirmed edges or a gate explicitly named after
      * the original map, to avoid losing the player's saved recovery position.
      */
+    private static int goToGate(Player p) {
+        if (p == null || GameCanvas.loadmap == null) return FAILED;
+        int d = MainObject.getDistance(p.x,p.y,currentGateX,currentGateY);
+        if (d > 38) {
+            int nav = SmartNavigator.approach(p,currentGateX,currentGateY,28);
+            return nav == SmartNavigator.FAILED ? FAILED : MOVING;
+        }
+        if (!gateTouchSent && p.posTransRoad == null && d > 5) {
+            // Final short step to the actual server gate point, not merely
+            // the nearest tile center. Stop sending after this single request.
+            int tx = p.x / LoadMap.wTile, ty = p.y / LoadMap.wTile;
+            if (tx < 128 && ty < 128 && tx >= 0 && ty >= 0) {
+                p.toX = p.x;
+                p.toY = p.y;
+                p.xStopMove = currentGateX;
+                p.yStopMove = currentGateY;
+                p.countAutoMove = 0;
+                p.posTransRoad = new short[]{(short)((tx<<8)|ty)};
+                gateTouchSent = true;
+            }
+        }
+        return MOVING; // only a server-confirmed map transition counts
+    }
+
     public static int moveToMap(Player p, int wantedMap, String wantedName) {
         if (GameCanvas.loadmap == null) return NO_ROUTE;
         if (GameCanvas.loadmap.idMap == wantedMap) {
@@ -137,14 +163,14 @@ public final class WorldTraveler {
             currentGateY = gate.y;
             currentTarget = wantedMap;
             awaitingTransition = true;
+            gateTouchSent = false;
             lastGateProgress = mSystem.currentTimeMillis();
         }
         if (mSystem.currentTimeMillis() - lastGateProgress > 18000L) {
             awaitingTransition = false;
             return FAILED;
         }
-        int nav = SmartNavigator.approach(p, currentGateX, currentGateY, 8);
-        return nav == SmartNavigator.FAILED ? FAILED : MOVING;
+        return goToGate(p);
     }
 
     /**
@@ -168,6 +194,7 @@ public final class WorldTraveler {
             }
             if (chosen == null) return NO_ROUTE;
             currentTarget = -2;
+            gateTouchSent = false;
             currentGateX = chosen.x;
             currentGateY = chosen.y;
             awaitingTransition = true;
@@ -177,7 +204,6 @@ public final class WorldTraveler {
             awaitingTransition = false;
             return FAILED;
         }
-        int nav = SmartNavigator.approach(p, currentGateX, currentGateY, 8);
-        return nav == SmartNavigator.FAILED ? FAILED : MOVING;
+        return goToGate(p);
     }
 }
