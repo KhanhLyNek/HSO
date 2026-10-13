@@ -105,6 +105,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import net.Message;
 import tools.training.TrainingController;
+import tools.trading.TradeController;
 
 /* loaded from: KnightOnline_v403.jar:netcommand/global/ReadMessenge.class */
 public class ReadMessenge extends AvMain {
@@ -952,6 +953,7 @@ public class ReadMessenge extends AvMain {
     }
 
     public void changeMap(Message message) {
+        TradeController.beforeMapChange();
         boolean z = false;
         try {
             GameCanvas.game.wRec = 0;
@@ -1057,6 +1059,7 @@ public class ReadMessenge extends AvMain {
             }
             byte readByte3 = message.reader().readByte();
             LoadMap.Area = message.reader().readByte();
+            TradeController.afterMapChange();
             ChildLocationDiagnostics.onMapChanged(GameCanvas.loadmap.idMap, GameCanvas.loadmap.nameMap, LoadMap.Area);
             GameCanvas.end_Dialog();
             GameCanvas.clearKeyHold();
@@ -3126,6 +3129,7 @@ public class ReadMessenge extends AvMain {
             mainObject.Action = 4;
             if (GameScreen.player == mainObject) {
                 TrainingController.onDeath(GameScreen.player);
+                TradeController.onDeath();
             }
             mainObject.timedie = GameCanvas.timeNow;
             GameScreen.addEffectEndKill(11, mainObject.x, mainObject.y);
