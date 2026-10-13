@@ -25,8 +25,28 @@ public final class ToolMenus {
     private static final int HUB = 80;
     private ToolMenus() {}
 
+    /**
+     * The shipped original GameScreen.class declares cmdMyseft but never
+     * initializes it. The decompiled source suggests otherwise, but the
+     * precompiled class is what runs in the JAR. Restore the game's real
+     * inventory action (native GameScreen.commandPointer case 1).
+     */
+    private static iCommand inventoryCommand(GameScreen game) {
+        if (game.cmdMyseft == null || game.cmdMyseft.indexMenu != (byte) 1) {
+            game.cmdMyseft = new iCommand(T.tabhanhtrang, 1, game);
+        } else {
+            game.cmdMyseft.caption = T.tabhanhtrang;
+        }
+        return game.cmdMyseft;
+    }
+
     public static void onShow(GameScreen game) {
-        game.cmdMenu = new iCommand(T.menu, 70, game);
+        inventoryCommand(game);
+        if (game.cmdMenu == null || game.cmdMenu.indexMenu != (byte) 70) {
+            game.cmdMenu = new iCommand(T.menu, 70, game);
+        } else {
+            game.cmdMenu.caption = T.menu;
+        }
         if (!GameCanvas.isTouch) game.left = game.cmdMenu;
     }
 
@@ -48,10 +68,17 @@ public final class ToolMenus {
 
     public static void openMain(Menu2 menu, mVector choices, int position,
                                 String title, boolean interaction, mVector targets) {
-        // Decompiled client occasionally leaves an uninitialized menu command.
-        for (int i = choices.size() - 1; i >= 0; i--) {
-            if (choices.elementAt(i) == null) choices.removeElementAt(i);
+        // Always preserve and show the game's original inventory entry at #1.
+        // Do not silently remove the missing cmdMyseft entry as older builds did.
+        iCommand inventory = inventoryCommand(GameScreen.gI());
+        if (choices.size() == 0) {
+            choices.addElement(inventory);
+        } else if (choices.elementAt(0) == null) {
+            choices.setElementAt(inventory, 0);
+        } else if (choices.elementAt(0) != inventory) {
+            choices.insertElementAt(inventory, 0);
         }
+        // Leave all remaining game entries in place and in their original order.
         addHub(choices);
         menu.startAt(choices, position, title, interaction, targets);
     }
@@ -74,6 +101,7 @@ public final class ToolMenus {
         choices.addElement(action("Săn Boss", 98));
         choices.addElement(action("Đi buôn", 86));
         choices.addElement(action("Nhiệm vụ tự động", 100));
+        choices.addElement(action(T.tabhanhtrang, 1));
         choices.addElement(action("Tiện ích & trạng thái", 99));
         choices.addElement(action("Về menu trò chơi", 70));
         show("LyMeowz - Trung tâm", choices);
