@@ -21,9 +21,9 @@ public final class WorldTraveler {
     private static int previousMap = -1, previousX = -1, previousY = -1;
     private static int currentTarget = -1, currentGateX = -1, currentGateY = -1;
     private static int currentGateExpected = -1, transitions;
-    private static long lastGateProgress, lastMessage;
+    private static long lastGateProgress;
     private static boolean awaitingTransition, gateTouchSent;
-    private static int lastMapSeen = -1, currentArea = -1;
+    private static int lastMapSeen = -1;
 
     private WorldTraveler() {}
 
@@ -49,7 +49,10 @@ public final class WorldTraveler {
         if (GameCanvas.loadmap == null) return;
         int current = GameCanvas.loadmap.idMap;
         memory.visit(current, GameCanvas.loadmap.nameMap);
+        // Teleport stones bypass physical gates. Do not create fake walking
+        // edges between maps when the server marks the transition as a teleport.
         if (previousMap >= 0 && previousMap != current &&
+                !GameCanvas.load.isTele &&
                 previousX >= 0 && previousY >= 0) {
             memory.connect(previousMap, current, previousX, previousY);
         }
@@ -61,7 +64,6 @@ public final class WorldTraveler {
             currentGateX = currentGateY = -1;
             lastMapSeen = current;
         }
-        currentArea = LoadMap.Area;
     }
 
     public static void resetJourney() {
