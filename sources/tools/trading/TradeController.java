@@ -6,6 +6,8 @@ import GameObjects.Player;
 import GameScreen.GameScreen;
 import Main.GameCanvas;
 import Thread_More.LoadMap;
+import tools.training.TrainingController;
+import tools.training.TrainingSettings;
 
 /**
  * Merchant convoy route recorder/replayer.
@@ -81,6 +83,7 @@ public final class TradeController {
             say("Hay dung chay tuyen truoc khi ghi moi.");
             return;
         }
+        if (TrainingSettings.isEnabled()) TrainingController.stop("Chuyen sang ghi tuyen di buon.");
         route.clear();
         character = p.name;
         originName = GameCanvas.loadmap.nameMap;
@@ -140,6 +143,7 @@ public final class TradeController {
             say("Can cap 40+ de di buon.");
             return;
         }
+        if (TrainingSettings.isEnabled()) TrainingController.stop("Chuyen sang Auto Di Buon.");
         // No Auto Fire while transporting goods.
         Player.isAutoFire = (byte) -1;
         Player.isCurAutoFire = false;
@@ -257,6 +261,10 @@ public final class TradeController {
             return;
         }
         missingPackSince = 0;
+        if (!animal.isInfo) {
+            p.posTransRoad = null;
+            return;
+        }
         if (animal.Action == 4 || animal.hp <= 0) {
             stop();
             say("Con vat cho hang da chet.");
