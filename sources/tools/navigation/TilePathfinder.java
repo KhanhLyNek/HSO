@@ -71,9 +71,10 @@ public final class TilePathfinder {
             int d = Math.abs(x - originalX) + Math.abs(y - originalY);
             if (d < bestDist) { bestDist = d; best = cell; }
             if (d <= goalTolerance) { found = cell; break; }
-            int[] adj = {x+1, y, x-1, y, x, y+1, x, y-1};
-            for (int j = 0; j < adj.length; j += 2) {
-                int nx = adj[j], ny = adj[j+1];
+            // Four neighbors, no temporary arrays in the hot BFS loop.
+            for (int j = 0; j < 4; j++) {
+                int nx = x + (j == 0 ? 1 : j == 1 ? -1 : 0);
+                int ny = y + (j == 2 ? 1 : j == 3 ? -1 : 0);
                 if (!passable(tiles,width,height,nx,ny)) continue;
                 int neighbor = ny * width + nx;
                 if (seen[neighbor] == gen) continue;
