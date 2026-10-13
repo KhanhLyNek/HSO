@@ -143,7 +143,8 @@ public final class WorldTraveler {
             awaitingTransition = false;
             return FAILED;
         }
-        return SmartNavigator.approach(p, currentGateX, currentGateY, 16);
+        int nav = SmartNavigator.approach(p, currentGateX, currentGateY, 8);
+        return nav == SmartNavigator.FAILED ? FAILED : MOVING;
     }
 
     /**
@@ -161,7 +162,9 @@ public final class WorldTraveler {
                 if (gate == null || gate.name == null || gate.name.length() == 0) continue;
                 // Prefer a nearby gateway; don't assume server map IDs from text.
                 int dist = MainObject.getDistance(p.x, p.y, gate.x, gate.y);
-                if (dist < best) {best = dist; chosen = gate;}
+                int visits = memory.visitsByName(gate.name);
+                int score = dist + visits * 2500;
+                if (score < best) {best = score; chosen = gate;}
             }
             if (chosen == null) return NO_ROUTE;
             currentTarget = -2;
@@ -174,6 +177,7 @@ public final class WorldTraveler {
             awaitingTransition = false;
             return FAILED;
         }
-        return SmartNavigator.approach(p, currentGateX, currentGateY, 16);
+        int nav = SmartNavigator.approach(p, currentGateX, currentGateY, 8);
+        return nav == SmartNavigator.FAILED ? FAILED : MOVING;
     }
 }
