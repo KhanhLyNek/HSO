@@ -11,6 +11,9 @@ public final class TrainingSettings {
     private static boolean returnAfterDeath = true;
     private static int mode = TargetPolicy.SMART;
     private static boolean patrolEnabled = false;
+    private static boolean autoFindFarm = true;
+    private static boolean autoChangeArea = true;
+    private static boolean autoExploreMap = true;
 
     private TrainingSettings() {}
 
@@ -30,6 +33,12 @@ public final class TrainingSettings {
         }
     }
 
+    public static boolean isAutoFindFarm() { return autoFindFarm; }
+    public static void toggleAutoFindFarm() { autoFindFarm = !autoFindFarm; }
+    public static boolean isAutoChangeArea() { return autoChangeArea; }
+    public static void toggleAutoChangeArea() { autoChangeArea = !autoChangeArea; }
+    public static boolean isAutoExploreMap() { return autoExploreMap; }
+    public static void toggleAutoExploreMap() { autoExploreMap = !autoExploreMap; }
     public static boolean isPatrolEnabled() { return patrolEnabled; }
     public static void togglePatrol() { patrolEnabled = !patrolEnabled; }
 
