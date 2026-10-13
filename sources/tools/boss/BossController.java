@@ -31,8 +31,8 @@ public final class BossController {
     public static void cycleRadius() { radius = radius == 160 ? 240 : radius == 240 ? 320 : 160; }
     public static int getSpotted() { return spotted; }
     public static String status() {
-        return (enabled ? "Đang quét" : "Đã tắt") + " | Bán kính " + radius +
-                " | Boss phát hiện: " + spotted + (targetId >= 0 ? " | ID " + targetId : "");
+        return (enabled ? "Đang quét" : "Đã tắt") + " - Bán kính " + radius +
+                " - Boss phát hiện: " + spotted + (targetId >= 0 ? " - ID " + targetId : "");
     }
 
     public static void toggle() {
