@@ -200,6 +200,104 @@ public final class TrainingController {
                    <= TrainingSettings.getMaximumRange();
     }
 
+    /**
+     * One scan per second (not per game frame). Keeps a target long enough to
+     * finish an attack, and never selects boss, NPC, CAPTCHA or trader cargo.
+     */
+    private static void smartTargetTick(Player p) {
+        long now = mSystem.currentTimeMillis();
+        if (now - lastTargetCheck < 950L) return;
+        lastTargetCheck = now;
+        MainObject best = null;
+        int bestScore = TargetPolicy.INVALID;
+        MainObject current = GameScreen.ObjFocus;
+        int currentScore = TargetPolicy.INVALID;
+        int detected = 0;
+        int maxRange = TrainingSettings.getMaximumRange();
+        for (int i = 0; i < GameScreen.Vecplayers.size(); i++) {
+            MainObject mob = (MainObject) GameScreen.Vecplayers.elementAt(i);
+            if (mob == null || !allowMonster(mob)) continue;
+            int distance = MainObject.getDistance(p.x, p.y, mob.x, mob.y);
+            int campDistance = MainObject.getDistance(spotX, spotY, mob.x, mob.y);
+            int score = TargetPolicy.score(TrainingSettings.getMode(), p.Lv, mob.Lv,
+                    distance, campDistance, maxRange, mob.hp, mob.maxHp,
+                    true, mob.typeBoss != 0 || mob.isDie || mob.isSend);
+            if (score == TargetPolicy.INVALID) continue;
+            detected++;
+            if (mob == current) currentScore = score;
+            if (score > bestScore) { best = mob; bestScore = score; }
+        }
+        candidates = detected;
+        if (best == null) {
+            if (Player.isAutoFire == 1) Player.isAutoFire = (byte) 0;
+            selectedTargetId = -1;
+            if (current != null && current.typeObject == 1) GameScreen.ObjFocus = null;
+            if (TrainingSettings.isPatrolEnabled() && patrolCount > 1 &&
+                    now - lastMonsterFound > 4500L) {
+                patrolTick(p, now);
+            }
+            return;
+        }
+        lastMonsterFound = now;
+        stuckCount = 0;
+        if (p.posTransRoad != null && patrolCount > 1) p.posTransRoad = null;
+        if (current != best && (currentScore == TargetPolicy.INVALID ||
+                TargetPolicy.shouldSwitch(bestScore, currentScore, now - selectedAt))) {
+            GameScreen.ObjFocus = best;
+            selectedTargetId = best.ID;
+            selectedAt = now;
+            retargets++;
+        } else if (current == best) {
+            selectedTargetId = best.ID;
+        }
+        if (GameScreen.ObjFocus == null ||
+                !allowMonster(GameScreen.ObjFocus)) {
+            GameScreen.ObjFocus = best;
+            selectedTargetId = best.ID;
+            selectedAt = now;
+        }
+        if (Player.isAutoFire != 1 && p.posTransRoad == null) p.dofire_();
+    }
+
+    /** Only replays user-recorded waypoints on the same map / zone. */
+    private static void patrolTick(Player p, long now) {
+        if (patrolMap != GameCanvas.loadmap.idMap || patrolArea != LoadMap.Area) {
+            notice("Tuyến tuần tra khác bản đồ hoặc khu hiện tại.");
+            TrainingSettings.togglePatrol();
+            return;
+        }
+        int destinationX = patrolX[patrolIndex];
+        int destinationY = patrolY[patrolIndex];
+        if (MainObject.getDistance(p.x, p.y, destinationX, destinationY) <
+                LoadMap.wTile * 2) {
+            patrolIndex = (patrolIndex + 1) % patrolCount;
+            destinationX = patrolX[patrolIndex];
+            destinationY = patrolY[patrolIndex];
+            lastPatrolMove = now;
+            lastPatrolX = p.x;
+            lastPatrolY = p.y;
+        }
+        if (MainObject.getDistance(p.x, p.y, lastPatrolX, lastPatrolY) > 15) {
+            lastPatrolX = p.x;
+            lastPatrolY = p.y;
+            lastPatrolMove = now;
+            stuckCount = 0;
+        } else if (now - lastPatrolMove > 8000L) {
+            p.posTransRoad = null;
+            stuckCount++;
+            lastPatrolMove = now;
+            if (stuckCount >= 3) {
+                stop("Tuần tra bị kẹt, đã dừng an toàn.");
+                return;
+            }
+        }
+        Player.isAutoFire = (byte) 0;
+        if (p.posTransRoad == null) moveNear(p, destinationX, destinationY, false);
+        if (pathFailures >= 4) {
+            stop("Không tìm được đường tuần tra.");
+        }
+    }
+
     public static void onDeath(Player p) {
         if (!TrainingSettings.isEnabled() || state != TRAIN || p == null) {
             return;
@@ -243,12 +341,14 @@ public final class TrainingController {
                 if (Player.isAutoFire == 1) Player.isAutoFire = (byte) 0;
                 return;
             }
-            if (p.maxHp > 0 && p.hp * 100L / p.maxHp < TrainingSettings.getMinimumHp()) {
-                if (Player.isAutoFire == 1) {
-                    Player.isAutoFire = (byte) 0;
-                }
-            } else if (Player.isAutoFire != 1 && p.posTransRoad == null) {
-                p.dofire_();
+            if (p.maxHp <= 0 || p.hp * 100L / p.maxHp < TrainingSettings.getMinimumHp()) {
+                if (Player.isAutoFire == 1) Player.isAutoFire = (byte) 0;
+                return;
+            }
+            if (TrainingSettings.getMode() == TargetPolicy.CLASSIC) {
+                if (Player.isAutoFire != 1 && p.posTransRoad == null) p.dofire_();
+            } else {
+                smartTargetTick(p);
             }
             return;
         }
@@ -342,6 +442,8 @@ public final class TrainingController {
             if (MainObject.getDistance(p.x, p.y, spotX, spotY) <= LoadMap.wTile * 2) {
                 p.posTransRoad = null;
                 enter(TRAIN);
+                selectedTargetId = -1;
+                lastMonsterFound = mSystem.currentTimeMillis();
                 p.dofire_();
                 notice("Da ve bai luyen, tiep tuc Auto UP.");
                 return;
