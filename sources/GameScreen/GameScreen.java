@@ -164,6 +164,8 @@ public class GameScreen extends MainScreen {
     public iCommand cmdTradeDistance = new iCommand("Khoang cach thu", 192, this);
     public iCommand cmdTradeDylan = new iCommand("Luu NPC mua hang", 193, this);
     public iCommand cmdTradeGraham = new iCommand("Luu NPC ban hang", 194, this);
+    public iCommand cmdTradeOpenBuy = new iCommand("Mo NPC mua hang", 195, this);
+    public iCommand cmdTradeOpenSell = new iCommand("Mo NPC ban hang", 196, this);
     public iCommand cmdInfoVantieu = new iCommand(T.info, 27, this);
     public iCommand cmdQuickChat = new iCommand(T.chat, 28, this);
     public iCommand cmdplayerStore = new iCommand(T.gianHang, 30, this);
@@ -459,6 +461,12 @@ public class GameScreen extends MainScreen {
             case 194:
                 TradeController.captureDestinationNpc();
                 this.openTradeMenu();
+                break;
+            case 195:
+                TradeController.openSourceNpc();
+                break;
+            case 196:
+                TradeController.openDestinationNpc();
                 break;
             case 180:
                 this.openTrainingMenu();
@@ -1195,6 +1203,8 @@ public class GameScreen extends MainScreen {
         entries.addElement(this.cmdTradeDistance);
         entries.addElement(this.cmdTradeDylan);
         entries.addElement(this.cmdTradeGraham);
+        entries.addElement(this.cmdTradeOpenBuy);
+        entries.addElement(this.cmdTradeOpenSell);
         entries.addElement(this.cmdTradeStatus);
         GameCanvas.menu2.startAt(entries, 2, "Auto Di Buon", false, null);
     }
