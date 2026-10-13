@@ -10,6 +10,7 @@ import Thread_More.LoadMap;
 import InterfaceComponents.iCommand;
 import netcommand.global.GlobalService;
 import tools.trading.TradeController;
+import tools.boss.BossController;
 
 /**
  * Client-side training / death-recovery state machine.
@@ -36,6 +37,17 @@ public final class TrainingController {
     private static int pathFailures, menuDepth, recoveryRetries;
     private static boolean homeSent, areaSent, previousAutoHp;
 
+    private static final int MAX_WAYPOINTS = 6;
+    private static final int[] patrolX = new int[MAX_WAYPOINTS];
+    private static final int[] patrolY = new int[MAX_WAYPOINTS];
+    private static int patrolCount, patrolIndex, patrolMap = -1;
+    private static byte patrolArea;
+    private static long startedAt, lastTargetCheck, lastMonsterFound, selectedAt;
+    private static long lastProgressAt, lastPatrolMove;
+    private static int lastPatrolX, lastPatrolY, stuckCount;
+    private static int selectedTargetId = -1, candidates, retargets;
+    private static int startingLevel, startingProgress;
+
     private TrainingController() {}
 
     private static void enter(int next) {
@@ -54,9 +66,56 @@ public final class TrainingController {
     }
 
     public static String status() {
-        String[] labels = {"Tat", "Dang luyen", "Ve lang", "Tim da dich chuyen",
-                "Cho menu dich chuyen", "Cho vao map", "Tro lai toa do"};
-        return labels[state] + " - map " + mapId + " (" + spotX + "," + spotY + ")";
+        String[] labels = {"Tắt", "Đang luyện", "Về làng", "Tìm đá dịch chuyển",
+                "Chờ menu dịch chuyển", "Chờ vào bản đồ", "Trở lại vị trí"};
+        return labels[state] + " | Bản đồ " + mapId + " (" + spotX + "," + spotY +
+                ") | Quái " + candidates + " | Mốc " + patrolCount;
+    }
+
+    public static String statistics() {
+        Player p = GameScreen.player;
+        long minutes = startedAt > 0 ? (mSystem.currentTimeMillis() - startedAt) / 60000L : 0;
+        if (p == null) return "Chưa có dữ liệu nhân vật.";
+        return "Luyện " + minutes + " phút | Cấp " + startingLevel + "→" + p.Lv +
+                " | Tiến trình " + startingProgress + "→" + p.phantramLv +
+                " | Đổi quái " + retargets + " lần.";
+    }
+
+    public static int getPatrolCount() { return patrolCount; }
+
+    public static void recordWaypoint() {
+        Player p = GameScreen.player;
+        if (p == null || GameCanvas.loadmap == null || p.Action == 4) {
+            notice("Cần đứng ở vị trí muốn lưu.");
+            return;
+        }
+        int here = GameCanvas.loadmap.idMap;
+        if (patrolCount != 0 && (here != patrolMap || LoadMap.Area != patrolArea)) {
+            notice("Các mốc phải thuộc cùng bản đồ và khu.");
+            return;
+        }
+        if (patrolCount >= MAX_WAYPOINTS) {
+            notice("Đã đủ 6 mốc, hãy xoá trước khi ghi lại.");
+            return;
+        }
+        for (int i = 0; i < patrolCount; i++) {
+            if (MainObject.getDistance(patrolX[i], patrolY[i], p.x, p.y) < 48) {
+                notice("Mốc này quá gần mốc đã lưu.");
+                return;
+            }
+        }
+        if (patrolCount == 0) { patrolMap = here; patrolArea = LoadMap.Area; }
+        patrolX[patrolCount] = p.x;
+        patrolY[patrolCount] = p.y;
+        patrolCount++;
+        notice("Đã lưu mốc tuần tra " + patrolCount + "/" + MAX_WAYPOINTS);
+    }
+
+    public static void clearWaypoints() {
+        patrolCount = 0;
+        patrolIndex = 0;
+        patrolMap = -1;
+        notice("Đã xoá tuyến tuần tra.");
     }
 
     public static void toggle() {
@@ -73,6 +132,7 @@ public final class TrainingController {
             notice("Hay bat khi nhan vat con song trong bai luyen.");
             return;
         }
+        if (BossController.isEnabled()) BossController.stop("Chuyển sang Luyện cấp.");
         TrainingSettings.toggle();
         charName = p.name;
         mapId = GameCanvas.loadmap.idMap;
@@ -85,6 +145,19 @@ public final class TrainingController {
         recoveryRetries = 0;
         previousAutoHp = Player.isAutoHPMP;
         Player.isAutoHPMP = true;
+        startedAt = mSystem.currentTimeMillis();
+        startingLevel = p.Lv;
+        startingProgress = p.phantramLv;
+        lastTargetCheck = 0;
+        lastMonsterFound = startedAt;
+        lastPatrolMove = startedAt;
+        lastProgressAt = startedAt;
+        lastPatrolX = p.x;
+        lastPatrolY = p.y;
+        stuckCount = retargets = candidates = 0;
+        selectedAt = startedAt;
+        selectedTargetId = -1;
+        patrolIndex = 0;
         enter(TRAIN);
         p.dofire_();
         notice("Bat luyen cap, ghi diem " + mapId + ":" + spotX + "," + spotY);
@@ -119,8 +192,10 @@ public final class TrainingController {
         if (!TrainingSettings.isEnabled() || state != TRAIN) {
             return true;
         }
-        return target != null && target.typeObject == 1 && target.typeBoss != 2
-                && target.Action != 4 && !target.isDie
+        return target != null && target.typeObject == 1 && target.typeBoss == 0
+                && !target.isMonstervantieu() && !target.isMiNuong() &&
+                !target.isLuaThieng() && target.typeMonster != 7 &&
+                target.Action != 4 && !target.isDie && !target.isSend
                 && MainObject.getDistance(target.x, target.y, spotX, spotY)
                    <= TrainingSettings.getMaximumRange();
     }
