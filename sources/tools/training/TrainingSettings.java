@@ -5,8 +5,11 @@ public final class TrainingSettings {
     private static boolean enabled;
     private static int minimumHp = 35;
     private static int maximumRange = 180;
+    private static boolean returnAfterDeath = true;
     private TrainingSettings() {}
     public static boolean isEnabled() { return enabled; }
+    public static boolean isReturnAfterDeath() { return returnAfterDeath; }
+    public static void toggleReturnAfterDeath() { returnAfterDeath = !returnAfterDeath; }
     public static void toggle() { enabled = !enabled; }
     public static void stop() { enabled = false; }
     public static int getMinimumHp() { return minimumHp; }
