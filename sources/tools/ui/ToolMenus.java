@@ -239,7 +239,7 @@ public final class ToolMenus {
                 showStatus("Buôn: " + TradeController.status());
                 openUtilities(); return true;
             case 121:
-                showStatus("LyMeowz Smart Tools 2.0 | AI chạy trực tiếp trên máy.");
+                showStatus("LyMeowz Smart Tools 2.0 - AI chạy trực tiếp trên máy.");
                 openUtilities(); return true;
             default: return false;
         }
