@@ -39,6 +39,7 @@ public final class SuperToolEngine {
 
     /** Used by the native Player.nextMonster override. */
     public static boolean onNextMonster(Player player) {
+        if (player == null || player != GameScreen.player) return false;
         int mode = activeMode();
         if (mode == ModeArbiter.TRADING || mode == ModeArbiter.RECORDING)
             return true; // No auto monster selection during cargo transport.
@@ -50,7 +51,8 @@ public final class SuperToolEngine {
     }
 
     public static void tick(Player player) {
-        if (player == null || GameCanvas.loadmap == null) return;
+        if (player == null || player != GameScreen.player ||
+                GameCanvas.loadmap == null) return;
         // Observation is paced internally; it does not issue movement or attacks.
         QuestAssistant.observeNPCs();
 
