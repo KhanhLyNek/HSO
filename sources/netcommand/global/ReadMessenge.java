@@ -104,6 +104,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import net.Message;
+import tools.training.TrainingController;
 
 /* loaded from: KnightOnline_v403.jar:netcommand/global/ReadMessenge.class */
 public class ReadMessenge extends AvMain {
@@ -2434,7 +2435,10 @@ public class ReadMessenge extends AvMain {
             for (int i = 0; i < readByte2; i++) {
                 mvector.addElement(new iCommand(message.reader().readUTF(), (IAction) null));
             }
-            GameCanvas.menu2.setinfoDynamic(mvector, 2, readByte, readShort, message.reader().readUTF());
+            String menuText = message.reader().readUTF();
+            if (!TrainingController.onDynamicMenu(readShort, readByte, mvector)) {
+                GameCanvas.menu2.setinfoDynamic(mvector, 2, readByte, readShort, menuText);
+            }
         } catch (Exception e) {
         }
     }
@@ -3120,6 +3124,9 @@ public class ReadMessenge extends AvMain {
             mainObject.hp = 0;
             mainObject.resetAction();
             mainObject.Action = 4;
+            if (GameScreen.player == mainObject) {
+                TrainingController.onDeath(GameScreen.player);
+            }
             mainObject.timedie = GameCanvas.timeNow;
             GameScreen.addEffectEndKill(11, mainObject.x, mainObject.y);
             if (GameScreen.player == mainObject && !GameScreen.infoGame.isMapChienTruong(GameCanvas.loadmap.idMap)) {
