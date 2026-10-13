@@ -70,8 +70,8 @@ public final class TradeController {
                 state == WAIT_GATE ? "Cho qua cong" :
                 state == READY ? "San sang" :
                 state == ARRIVED ? "Da den noi" : "Tat";
-        return s + " | moc " + index + "/" + route.size()
-                + " | con vat " + (hasPack ? "co" : "chua thay");
+        return s + " - moc " + index + "/" + route.size()
+                + " - con vat " + (hasPack ? "co" : "chua thay");
     }
 
     public static void startRecording() {
@@ -402,7 +402,7 @@ public final class TradeController {
         } catch (Exception e) {
             return false;
         }
-        int expected = ((tx & 255) << 8) | (ty & 255);
+        int expected = ((tx & 255) << 8) - (ty & 255);
         if (path == null || path.length < 2 ||
                 (path[path.length - 1] & 65535) != expected) return false;
         p.countAutoMove = 0;
