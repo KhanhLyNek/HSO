@@ -138,7 +138,7 @@ jobs:
             for name in required:
               if not name.endswith(".class"): continue
               data=j.read(name)
-              assert data[:4]==b"\\xca\\xfe\\xba\\xbe"
+              assert data[:4] == bytes((0xCA, 0xFE, 0xBA, 0xBE))
               major=struct.unpack(">H",data[6:8])[0]
               assert major==45, (name,major)
               print(name, "classfile", major, "bytes", len(data))
