@@ -1,0 +1,24 @@
+name: Movement sandbox tests
+on:
+  push:
+    paths:
+      - 'examples/MovementSandbox.java'
+      - 'examples/MovementSyncDemo.java'
+      - '.github/workflows/movement-sandbox.yml'
+  workflow_dispatch:
+
+jobs:
+  offline-movement:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Compile demos
+        run: javac -d out examples/MovementSandbox.java examples/MovementSyncDemo.java
+      - name: Verify authoritative sync and collision
+        run: java -cp out dev.lymeowz.hso.training.MovementSyncDemo
+      - name: Run speed and noclip sandbox
+        run: java -cp out dev.lymeowz.hso.training.MovementSandbox
