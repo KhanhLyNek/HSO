@@ -407,6 +407,12 @@ public final class TrainingController {
                 onDeath(p);
                 return;
             }
+            // Each confirmed new map/zone becomes the current training base.
+            // Death recovery (other states) never overwrites its saved destination.
+            if (GameCanvas.loadmap.idMap != mapId || LoadMap.Area != area) {
+                setNewTrainingSpot(p.x, p.y);
+                lastTargetCheck = 0;
+            }
             if (GameCanvas.currentScreen != GameCanvas.game ||
                     GameCanvas.currentDialog != null || GameCanvas.subDialog != null ||
                     GameCanvas.menu2.isShowMenu) {
