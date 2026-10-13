@@ -1,0 +1,148 @@
+name: HSO Auto Tools J2ME JAR build
+
+on:
+  push:
+    branches:
+      - feature/training-assistant-20261013
+    paths:
+      - 'sources/tools/**'
+      - 'build-tools/**'
+      - '.github/workflows/auto-tools-j2me.yml'
+      - 'resources/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - name: Checkout source + compiled J2ME resources
+        uses: actions/checkout@v4
+
+      - name: Set up bytecode build JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Compile mod classes against original CLDC client
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/mod-classes build/patcher-classes build/patch-classes build/jar-root
+          javac --release 8 -cp resources -d build/mod-classes \
+            sources/tools/trading/TradeRoute.java \
+            sources/tools/trading/TradeController.java \
+            sources/tools/training/TrainingSettings.java \
+            sources/tools/training/TrainingController.java \
+            sources/tools/ui/ToolMenus.java
+
+      - name: Compile the J2ME bytecode patcher
+        shell: bash
+        run: |
+          set -euo pipefail
+          javac \
+            --add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
+            --add-exports java.base/jdk.internal.org.objectweb.asm.commons=ALL-UNNAMED \
+            -d build/patcher-classes \
+            build-tools/tools/build/BytecodePatcher.java
+
+      - name: Integrate modules into original bytecode
+        shell: bash
+        run: |
+          set -euo pipefail
+          java \
+            --add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
+            --add-exports java.base/jdk.internal.org.objectweb.asm.commons=ALL-UNNAMED \
+            -cp build/patcher-classes tools.build.BytecodePatcher \
+            resources build/mod-classes build/patch-classes
+          cp -a resources/. build/jar-root/
+          cp -a build/patch-classes/. build/jar-root/
+          test -f build/jar-root/META-INF/MANIFEST.MF
+          test -f build/jar-root/tools/trading/TradeController.class
+          test -f build/jar-root/tools/training/TrainingController.class
+          test -f build/jar-root/tools/ui/ToolMenus.class
+          python3 - <<'PY'
+          import pathlib, zipfile
+          root = pathlib.Path("build/jar-root")
+          with zipfile.ZipFile("build/HSO-AutoTools-Unverified.jar", "w", zipfile.ZIP_DEFLATED) as out:
+              for file in sorted(root.rglob("*")):
+                  if file.is_file():
+                      out.write(file, file.relative_to(root).as_posix())
+          PY
+
+      - name: Preverify modified CLDC classes with ProGuard
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --silent --show-error \
+            https://repo.maven.apache.org/maven2/net/sf/proguard/proguard-base/6.2.2/proguard-base-6.2.2.jar \
+            --output build/proguard.jar
+          cat > build/proguard.pro <<'EOF'
+          -injars build/HSO-AutoTools-Unverified.jar
+          -outjars build/HSO-AutoTools-CLDC.jar
+          -dontshrink
+          -dontoptimize
+          -dontobfuscate
+          -dontwarn
+          -ignorewarnings
+          -microedition
+          -target 1.1
+          -keep class * { *; }
+          EOF
+          java -cp build/proguard.jar proguard.ProGuard @build/proguard.pro
+
+      - name: Verify output JAR and preverification
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import struct, zipfile
+          path="build/HSO-AutoTools-CLDC.jar"
+          required=[
+            "META-INF/MANIFEST.MF",
+            "GameScreen/GameScreen.class",
+            "Model/Menu2.class",
+            "GameObjects/Player.class",
+            "netcommand/global/ReadMessenge.class",
+            "tools/ui/ToolMenus.class",
+            "tools/training/TrainingController.class",
+            "tools/training/TrainingSettings.class",
+            "tools/trading/TradeController.class",
+            "tools/trading/TradeRoute.class",
+          ]
+          with zipfile.ZipFile(path) as j:
+            names=set(j.namelist())
+            assert set(required).issubset(names), sorted(set(required)-names)
+            assert len(names)>500, len(names)
+            for name in required:
+              if not name.endswith(".class"): continue
+              data=j.read(name)
+              assert data[:4]==b"\\xca\\xfe\\xba\\xbe"
+              major=struct.unpack(">H",data[6:8])[0]
+              assert major==45, (name,major)
+              print(name, "classfile", major, "bytes", len(data))
+            print("Total",len(names),"entries, JAR integrity OK")
+          PY
+          javap -v -classpath build/HSO-AutoTools-CLDC.jar tools.ui.ToolMenus \
+            | grep -m1 -E 'StackMap:|StackMapTable:' || true
+
+      - name: Publish completed J2ME JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: HSO-AutoTools-CLDC-JAR
+          path: build/HSO-AutoTools-CLDC.jar
+          if-no-files-found: error
+
+      - name: Upload build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: HSO-AutoTools-build-logs
+          path: |
+            build/proguard.pro
+            build/HSO-AutoTools-Unverified.jar
+          if-no-files-found: ignore
