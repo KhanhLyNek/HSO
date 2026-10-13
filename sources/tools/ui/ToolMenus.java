@@ -72,7 +72,7 @@ public final class ToolMenus {
         choices.addElement(action("Đi buôn", 86));
         choices.addElement(action("Tiện ích & trạng thái", 99));
         choices.addElement(action("Về menu trò chơi", 70));
-        show("LyMeowz | Trung tâm", choices);
+        show("LyMeowz - Trung tâm", choices);
     }
 
     public static void openTrainingMenu() {
@@ -84,7 +84,7 @@ public final class ToolMenus {
         choices.addElement(action("Sinh tồn & hồi sinh", 106));
         choices.addElement(action("Thống kê luyện cấp", 109));
         choices.addElement(action("Quay lại LyMeowz", 117));
-        show("LyMeowz | Luyện cấp", choices);
+        show("LyMeowz - Luyện cấp", choices);
     }
 
     private static void openPatrolMenu() {
@@ -95,7 +95,7 @@ public final class ToolMenus {
         choices.addElement(action("Xóa các mốc đã lưu", 104));
         choices.addElement(action("Phạm vi đánh: " + TrainingSettings.getMaximumRange(), 84));
         choices.addElement(action("Về Luyện cấp", 118));
-        show("LyMeowz | Tuần tra", choices);
+        show("LyMeowz - Tuần tra", choices);
     }
 
     private static void openSurvivalMenu() {
@@ -106,7 +106,7 @@ public final class ToolMenus {
         choices.addElement(action("Chọn đá dịch chuyển", 83));
         choices.addElement(action("Trạng thái luyện cấp", 85));
         choices.addElement(action("Về Luyện cấp", 118));
-        show("LyMeowz | Sinh tồn", choices);
+        show("LyMeowz - Sinh tồn", choices);
     }
 
     private static void openBossMenu() {
@@ -116,7 +116,7 @@ public final class ToolMenus {
         choices.addElement(action("Phạm vi quét: " + BossController.getRadius(), 112));
         choices.addElement(action("Xem Boss trong vùng", 113));
         choices.addElement(action("Quay lại LyMeowz", 117));
-        show("LyMeowz | Săn Boss", choices);
+        show("LyMeowz - Săn Boss", choices);
     }
 
     public static void openTradeMenu() {
@@ -125,7 +125,7 @@ public final class ToolMenus {
         choices.addElement(action("Giao dịch NPC", 115));
         choices.addElement(action("Cấu hình & trạng thái", 116));
         choices.addElement(action("Quay lại LyMeowz", 117));
-        show("LyMeowz | Đi buôn", choices);
+        show("LyMeowz - Đi buôn", choices);
     }
 
     private static void openTradeRoute() {
@@ -135,7 +135,7 @@ public final class ToolMenus {
         choices.addElement(action("Bắt đầu dẫn hàng", 89));
         choices.addElement(action("Dừng dẫn hàng", 90));
         choices.addElement(action("Về Đi buôn", 119));
-        show("LyMeowz | Tuyến buôn", choices);
+        show("LyMeowz - Tuyến buôn", choices);
     }
 
     private static void openTradeNPC() {
@@ -145,7 +145,7 @@ public final class ToolMenus {
         choices.addElement(action("Mở NPC mua hàng", 95));
         choices.addElement(action("Mở NPC bán hàng", 96));
         choices.addElement(action("Về Đi buôn", 119));
-        show("LyMeowz | Giao dịch", choices);
+        show("LyMeowz - Giao dịch", choices);
     }
 
     private static void openTradeConfig() {
@@ -153,7 +153,7 @@ public final class ToolMenus {
         choices.addElement(action("Khoảng cách thú: " + TradeController.getDistanceLimit(), 92));
         choices.addElement(action("Trạng thái đi buôn", 91));
         choices.addElement(action("Về Đi buôn", 119));
-        show("LyMeowz | Vận chuyển", choices);
+        show("LyMeowz - Vận chuyển", choices);
     }
 
     private static void openUtilities() {
@@ -161,7 +161,7 @@ public final class ToolMenus {
         choices.addElement(action("Tổng quan các tool", 120));
         choices.addElement(action("Thông tin phiên bản", 121));
         choices.addElement(action("Quay lại LyMeowz", 117));
-        show("LyMeowz | Tiện ích", choices);
+        show("LyMeowz - Tiện ích", choices);
     }
 
     private static void showStatus(String message) {
