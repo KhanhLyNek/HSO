@@ -464,25 +464,29 @@ public final class TrainingController {
                 enter(SPOT);
                 return;
             }
+            // Prefer known, server-confirmed map gateways over fragile NPC menus.
+            int direct = WorldTraveler.moveToMap(p, mapId, mapName);
+            if (direct == WorldTraveler.MOVING) {
+                enter(ROUTE);
+                notice("Đã tìm thấy đường qua cổng, đang trở lại bãi.");
+                return;
+            }
             MainObject npc = findStone(p);
-            if (npc == null) {
-                if (timedOut(15000L)) {
-                    stop("Khong tim thay da dich chuyen. Hay chon NPC trong menu.");
+            if (npc != null && recoveryPathFailures == 0) {
+                if (MainObject.getDistance(p.x, p.y, npc.x, npc.y) <= p.wFocus - 25) {
+                    activeStone = npc.getIDnpc();
+                    menuDepth = 0;
+                    SmartNavigator.reset(p);
+                    GlobalService.gI().getlist_from_npc((byte) activeStone);
+                    enter(STONE_MENU);
+                    return;
                 }
-                return;
+                int near = SmartNavigator.approach(p, npc.x, npc.y,
+                        Math.max(40, p.wFocus - 25));
+                if (near != SmartNavigator.FAILED && !timedOut(25000L)) return;
             }
-            if (MainObject.getDistance(p.x, p.y, npc.x, npc.y) <= p.wFocus - 25) {
-                activeStone = npc.getIDnpc();
-                menuDepth = 0;
-                p.posTransRoad = null;
-                GlobalService.gI().getlist_from_npc((byte) activeStone);
-                enter(STONE_MENU);
-                return;
-            }
-            moveNear(p, npc.x, npc.y, true);
-            if (pathFailures >= 4 || timedOut(25000L)) {
-                stop("Khong tim duoc duong den da dich chuyen.");
-            }
+            enter(ROUTE);
+            notice("Không dùng được đá dịch chuyển. Đang thử đường qua bản đồ.");
             return;
         }
         if (state == STONE_MENU || state == MAP_WAIT) {
@@ -491,7 +495,31 @@ public final class TrainingController {
                 return;
             }
             if (timedOut(18000L)) {
-                stop("Da dich chuyen khong tra ve map da luu.");
+                recoveryPathFailures++;
+                enter(ROUTE);
+                notice("Đá dịch chuyển không phản hồi, chuyển sang tìm đường.");
+            }
+            return;
+        }
+        if (state == ROUTE) {
+            if (GameCanvas.loadmap.idMap == mapId) {
+                SmartNavigator.reset(p);
+                enter(SPOT);
+                return;
+            }
+            if (mSystem.currentTimeMillis() - recoveryStarted > 160000L) {
+                stop("Đã quá thời gian tìm đường về bãi.");
+                return;
+            }
+            int result = WorldTraveler.moveToMap(p, mapId, mapName);
+            if (result == WorldTraveler.NO_ROUTE && TrainingSettings.isAutoExploreMap())
+                result = WorldTraveler.exploreNextMap(p);
+            if (result == WorldTraveler.FAILED || result == WorldTraveler.NO_ROUTE) {
+                recoveryPathFailures++;
+                SmartNavigator.reset(p);
+                if (recoveryPathFailures > 3) {
+                    stop("Chưa học được cổng về bản đồ đã chết. Hãy đi qua một lần để ghi nhớ.");
+                }
             }
             return;
         }
@@ -519,9 +547,10 @@ public final class TrainingController {
                 notice("Da ve bai luyen, tiep tuc Auto UP.");
                 return;
             }
-            moveNear(p, spotX, spotY, false);
-            if (pathFailures >= 4 || timedOut(30000L)) {
-                stop("Khong tim duoc duong ve toa do chet.");
+            int move = SmartNavigator.approach(p, spotX, spotY, LoadMap.wTile * 2);
+            if (move == SmartNavigator.FAILED ||
+                    mSystem.currentTimeMillis() - recoveryStarted > 240000L) {
+                stop("Không tìm được đường an toàn tới vị trí đã chết.");
             }
         }
     }
@@ -549,57 +578,6 @@ public final class TrainingController {
         return preferred != null ? preferred : nearest;
     }
 
-    private static void moveNear(Player p, int x, int y, boolean npc) {
-        if (p.posTransRoad != null) return;
-        long now = mSystem.currentTimeMillis();
-        if (now - lastMove < 1100L) return;
-        lastMove = now;
-        int tile = LoadMap.wTile;
-        int tx = x / tile, ty = y / tile;
-        if (npc) {
-            int[][] offsets = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
-            int best = Integer.MAX_VALUE, bx = tx, by = ty;
-            for (int i = 0; i < offsets.length; i++) {
-                int cx = tx + offsets[i][0], cy = ty + offsets[i][1];
-                if (!walkable(cx, cy)) continue;
-                int d = MainObject.getDistance(p.x, p.y, cx * tile, cy * tile);
-                if (d < best) { best = d; bx = cx; by = cy; }
-            }
-            tx = bx; ty = by;
-        }
-        if (!walkable(tx, ty)) { pathFailures++; return; }
-        int sx = p.x / tile, sy = p.y / tile;
-        if (!walkable(sx, sy)) { pathFailures++; return; }
-        short[] route;
-        try {
-            route = GameScreen.gI().updateFindRoad(tx, ty, sx, sy, 80);
-        } catch (Exception ex) {
-            pathFailures++;
-            return;
-        }
-        int end = ((tx & 255) << 8) - (ty & 255);
-        if (route == null || route.length < 2
-                || (route[route.length - 1] & 65535) != end) {
-            pathFailures++;
-            return;
-        }
-        p.countAutoMove = 0;
-        p.toX = p.x;
-        p.toY = p.y;
-        p.xStopMove = tx * tile + tile / 2;
-        p.yStopMove = ty * tile + tile / 2;
-        p.posTransRoad = route;
-        pathFailures = 0;
-    }
-
-    private static boolean walkable(int x, int y) {
-        if (GameCanvas.loadmap.mapType == null || x < 0 || y < 0 ||
-                x >= GameCanvas.loadmap.mapW || y >= GameCanvas.loadmap.mapH)
-            return false;
-        int type = GameCanvas.loadmap.mapType[y * GameCanvas.loadmap.mapW + x];
-        return type != 1 && type != -1;
-    }
-
     public static boolean onDynamicMenu(short npcId, byte menuId, mVector entries) {
         if (!TrainingSettings.isEnabled() ||
                 (state != STONE_MENU && state != MAP_WAIT) || npcId != activeStone) {
@@ -625,7 +603,9 @@ public final class TrainingController {
             }
         }
         if (count != 1 || menuDepth >= 3) {
-            stop("Menu dich chuyen khong ro. Hay thao tac thu cong.");
+            recoveryPathFailures++;
+            enter(ROUTE);
+            notice("Menu đá dịch chuyển không rõ, đang thử đường bộ.");
             return false;
         }
         menuDepth++;
