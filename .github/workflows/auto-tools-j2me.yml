@@ -74,6 +74,12 @@ jobs:
                       out.write(file, file.relative_to(root).as_posix())
           PY
 
+      - name: Set up Java 8 library for type hierarchy verification
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+
       - name: Preverify modified CLDC classes with ProGuard
         shell: bash
         run: |
@@ -94,6 +100,7 @@ jobs:
           -target 1.1
           -keep class * { *; }
           EOF
+          echo "-libraryjars ${JAVA_HOME}/jre/lib/rt.jar" >> build/proguard.pro
           java -cp build/proguard.jar proguard.ProGuard @build/proguard.pro
           unzip -oq build/HSO-AutoTools-Preverified-Patches.jar -d build/jar-root
           python3 - <<'PY'
