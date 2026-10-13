@@ -11,6 +11,9 @@ import InterfaceComponents.iCommand;
 import netcommand.global.GlobalService;
 import tools.trading.TradeController;
 import tools.boss.BossController;
+import tools.navigation.SmartNavigator;
+import tools.navigation.WorldTraveler;
+import tools.quest.QuestAssistant;
 
 /**
  * Client-side training / death-recovery state machine.
@@ -25,6 +28,7 @@ public final class TrainingController {
     private static final int STONE_MENU = 4;
     private static final int MAP_WAIT = 5;
     private static final int SPOT = 6;
+    private static final int ROUTE = 7;
     private static int state = IDLE;
     private static int mapId = -1;
     private static byte area;
@@ -36,6 +40,8 @@ public final class TrainingController {
     private static long enteredAt, lastMove;
     private static int pathFailures, menuDepth, recoveryRetries;
     private static boolean homeSent, areaSent, previousAutoHp;
+    private static int recoveryPathFailures;
+    private static long recoveryStarted;
 
     private static final int MAX_WAYPOINTS = 6;
     private static final PatrolBrain patrolBrain = new PatrolBrain(MAX_WAYPOINTS);
@@ -69,7 +75,7 @@ public final class TrainingController {
 
     public static String status() {
         String[] labels = {"Tắt", "Đang luyện", "Về làng", "Tìm đá dịch chuyển",
-                "Chờ menu dịch chuyển", "Chờ vào bản đồ", "Trở lại vị trí"};
+                "Chờ menu dịch chuyển", "Chờ vào bản đồ", "Trở lại vị trí", "Tìm đường qua bản đồ"};
         return labels[state] + " - Bản đồ " + mapId + " (" + spotX + "," + spotY +
                 ") - Quái " + candidates + " - Mốc " + patrolCount;
     }
@@ -84,6 +90,16 @@ public final class TrainingController {
     }
 
     public static int getPatrolCount() { return patrolCount; }
+
+    public static void setNewTrainingSpot(int x, int y) {
+        if (state != TRAIN || GameCanvas.loadmap == null) return;
+        mapId = GameCanvas.loadmap.idMap;
+        mapName = GameCanvas.loadmap.nameMap;
+        area = LoadMap.Area;
+        spotX = x;
+        spotY = y;
+        lastMonsterFound = mSystem.currentTimeMillis();
+    }
 
     public static void recordWaypoint() {
         Player p = GameScreen.player;
@@ -165,9 +181,12 @@ public final class TrainingController {
         selectedAt = startedAt;
         selectedTargetId = -1;
         patrolIndex = 0;
+        AutoFarmExplorer.reset();
+        recoveryPathFailures = 0;
         enter(TRAIN);
-        p.dofire_();
-        notice("Bat luyen cap, ghi diem " + mapId + ":" + spotX + "," + spotY);
+        Player.isAutoFire = (byte) 0;
+        Player.isCurAutoFire = true;
+        notice("Đã bật Auto UP thông minh. Đang tìm quái và bản đồ phù hợp.");
     }
 
     public static void stop(String why) {
@@ -176,6 +195,8 @@ public final class TrainingController {
         }
         TrainingSettings.stop();
         state = IDLE;
+        AutoFarmExplorer.reset();
+        SmartNavigator.reset(GameScreen.player);
         Player.isAutoFire = (byte) -1;
         Player.isCurAutoFire = false;
         Player.isAutoHPMP = previousAutoHp;
@@ -201,7 +222,7 @@ public final class TrainingController {
         }
         return target != null && target.typeObject == 1 && target.typeBoss == 0
                 && !target.isMonstervantieu() && !target.isMiNuong() &&
-                !target.isLuaThieng() && target.typeMonster != 7 &&
+                !target.isLuaThieng() && (target.typeMonster != 7 || QuestAssistant.bonus(target) > 0) &&
                 target.Action != 4 && !target.isDie && !target.isSend
                 && MainObject.getDistance(target.x, target.y, campX(), campY())
                    <= TrainingSettings.getMaximumRange();
@@ -258,10 +279,12 @@ public final class TrainingController {
                         nearbyDensity[j]++;
                 }
             }
+            score += QuestAssistant.bonus(mob);
             if (mob == current) currentScore = score;
             if (score > bestScore) { best = mob; bestScore = score; }
         }
         candidates = detected;
+        if (detected > 0) WorldTraveler.observeMonsters(p.Lv, detected);
         if (TrainingSettings.isPatrolEnabled() && patrolCount > 1) {
             for (int j = 0; j < patrolCount; j++) {
                 if (MainObject.getDistance(p.x, p.y, patrolX[j], patrolY[j]) < 260)
@@ -275,10 +298,13 @@ public final class TrainingController {
             if (TrainingSettings.isPatrolEnabled() && patrolCount > 1 &&
                     now - lastMonsterFound > 4500L) {
                 patrolTick(p, now);
+            } else if (now - lastMonsterFound > 3500L) {
+                AutoFarmExplorer.tick(p);
             }
             return;
         }
         lastMonsterFound = now;
+        AutoFarmExplorer.onFoundMonsters();
         stuckCount = 0;
         if (p.posTransRoad != null && patrolCount > 1) p.posTransRoad = null;
         if (current != best && (currentScore == TargetPolicy.INVALID ||
@@ -357,8 +383,11 @@ public final class TrainingController {
         areaSent = false;
         recoveryRetries = 0;
         menuDepth = 0;
+        recoveryPathFailures = 0;
+        recoveryStarted = mSystem.currentTimeMillis();
         Player.isAutoFire = (byte) -1;
         Player.isCurAutoFire = false;
+        SmartNavigator.reset(p);
         p.posTransRoad = null;
         enter(HOME);
         notice("Ghi toa do chet: " + spotX + "," + spotY + ". Ve lang...");
@@ -387,11 +416,11 @@ public final class TrainingController {
                 if (Player.isAutoFire == 1) Player.isAutoFire = (byte) 0;
                 return;
             }
-            if (TrainingSettings.getMode() == TargetPolicy.CLASSIC) {
-                if (Player.isAutoFire != 1 && p.posTransRoad == null) p.dofire_();
-            } else {
-                smartTargetTick(p);
+            if (QuestAssistant.submitIfReady(p)) {
+                Player.isAutoFire = (byte) 0;
+                return;
             }
+            smartTargetTick(p);
             return;
         }
         if (state != HOME && p.Action == 4) {
