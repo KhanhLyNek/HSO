@@ -32,7 +32,7 @@ public final class TrainingController {
     private static int selectedStone = 1000;
     private static int activeStone = 1000;
     private static long enteredAt, lastMove;
-    private static int pathFailures, menuDepth;
+    private static int pathFailures, menuDepth, recoveryRetries;
     private static boolean homeSent, areaSent, previousAutoHp;
 
     private TrainingController() {}
@@ -77,6 +77,7 @@ public final class TrainingController {
         spotY = p.y;
         homeSent = false;
         areaSent = false;
+        recoveryRetries = 0;
         previousAutoHp = Player.isAutoHPMP;
         Player.isAutoHPMP = true;
         enter(TRAIN);
@@ -134,6 +135,7 @@ public final class TrainingController {
         spotY = p.y;
         homeSent = false;
         areaSent = false;
+        recoveryRetries = 0;
         menuDepth = 0;
         Player.isAutoFire = (byte) -1;
         Player.isCurAutoFire = false;
@@ -155,7 +157,10 @@ public final class TrainingController {
                 onDeath(p);
                 return;
             }
-            if (GameCanvas.currentScreen != GameCanvas.game) {
+            if (GameCanvas.currentScreen != GameCanvas.game ||
+                    GameCanvas.currentDialog != null || GameCanvas.subDialog != null ||
+                    GameCanvas.menu2.isShowMenu) {
+                if (Player.isAutoFire == 1) Player.isAutoFire = (byte) 0;
                 return;
             }
             if (p.maxHp > 0 && p.hp * 100L / p.maxHp < TrainingSettings.getMinimumHp()) {
@@ -164,6 +169,18 @@ public final class TrainingController {
                 }
             } else if (Player.isAutoFire != 1 && p.posTransRoad == null) {
                 p.dofire_();
+            }
+            return;
+        }
+        if (state != HOME && p.Action == 4) {
+            if (recoveryRetries >= 2) {
+                stop("Chet qua nhieu lan trong luc quay lai bai.");
+            } else {
+                recoveryRetries++;
+                homeSent = false;
+                Player.isAutoFire = (byte) -1;
+                p.posTransRoad = null;
+                enter(HOME);
             }
             return;
         }
@@ -300,7 +317,13 @@ public final class TrainingController {
         if (!walkable(tx, ty)) { pathFailures++; return; }
         int sx = p.x / tile, sy = p.y / tile;
         if (!walkable(sx, sy)) { pathFailures++; return; }
-        short[] route = GameScreen.gI().updateFindRoad(tx, ty, sx, sy, 80);
+        short[] route;
+        try {
+            route = GameScreen.gI().updateFindRoad(tx, ty, sx, sy, 80);
+        } catch (Exception ex) {
+            pathFailures++;
+            return;
+        }
         int end = ((tx & 255) << 8) | (ty & 255);
         if (route == null || route.length < 2
                 || (route[route.length - 1] & 65535) != end) {
