@@ -10,6 +10,9 @@ import tools.boss.BossController;
 import tools.training.TrainingController;
 import tools.training.TrainingSettings;
 import tools.trading.TradeController;
+import tools.training.AutoFarmExplorer;
+import tools.navigation.WorldTraveler;
+import tools.quest.QuestAssistant;
 
 /**
  * Unified LyMeowz menu. Keeps existing game menus intact and exposes one
@@ -70,6 +73,7 @@ public final class ToolMenus {
         choices.addElement(action("Luyện cấp thông minh", 97));
         choices.addElement(action("Săn Boss", 98));
         choices.addElement(action("Đi buôn", 86));
+        choices.addElement(action("Nhiệm vụ tự động", 100));
         choices.addElement(action("Tiện ích & trạng thái", 99));
         choices.addElement(action("Về menu trò chơi", 70));
         show("LyMeowz - Trung tâm", choices);
@@ -80,11 +84,35 @@ public final class ToolMenus {
         choices.addElement(action(TrainingSettings.isEnabled() ?
                 "Dừng luyện cấp" : "Bắt đầu luyện cấp", 81));
         choices.addElement(action("Chế độ: " + TrainingSettings.modeName(), 101));
+        choices.addElement(action("Tự tìm bản đồ & quái", 122));
         choices.addElement(action("Tuần tra bãi luyện", 102));
         choices.addElement(action("Sinh tồn & hồi sinh", 106));
         choices.addElement(action("Thống kê luyện cấp", 109));
         choices.addElement(action("Quay lại LyMeowz", 117));
         show("LyMeowz - Luyện cấp", choices);
+    }
+
+    private static void openExploreMenu() {
+        mVector choices = items("Tìm bãi");
+        choices.addElement(action(TrainingSettings.isAutoFindFarm() ?
+                "Tự tìm quái: BẬT" : "Tự tìm quái: TẮT", 123));
+        choices.addElement(action(TrainingSettings.isAutoChangeArea() ?
+                "Tự đổi khu: BẬT" : "Tự đổi khu: TẮT", 124));
+        choices.addElement(action(TrainingSettings.isAutoExploreMap() ?
+                "Tự qua bản đồ: BẬT" : "Tự qua bản đồ: TẮT", 125));
+        choices.addElement(action("Bản đồ và đường đã học", 126));
+        choices.addElement(action("Về Luyện cấp", 118));
+        show("LyMeowz - Tìm bãi", choices);
+    }
+
+    private static void openQuestMenu() {
+        mVector choices = items("Nhiệm vụ");
+        choices.addElement(action(QuestAssistant.isEnabled() ?
+                "Tự làm và trả nhiệm vụ: BẬT" :
+                "Tự làm và trả nhiệm vụ: TẮT", 127));
+        choices.addElement(action("Kiểm tra tiến độ nhiệm vụ", 108));
+        choices.addElement(action("Quay lại LyMeowz", 117));
+        show("LyMeowz - Nhiệm vụ", choices);
     }
 
     private static void openPatrolMenu() {
@@ -159,6 +187,7 @@ public final class ToolMenus {
     private static void openUtilities() {
         mVector choices = items("Tiện ích");
         choices.addElement(action("Tổng quan các tool", 120));
+        choices.addElement(action("Trạng thái tìm đường", 110));
         choices.addElement(action("Thông tin phiên bản", 121));
         choices.addElement(action("Quay lại LyMeowz", 117));
         show("LyMeowz - Tiện ích", choices);
@@ -174,6 +203,15 @@ public final class ToolMenus {
             case 70: GameScreen.gI().doMenu(); return true;
             case 80: openHub(); return true;
             case 97: openTrainingMenu(); return true;
+            case 100: openQuestMenu(); return true;
+            case 122: openExploreMenu(); return true;
+            case 123: TrainingSettings.toggleAutoFindFarm(); openExploreMenu(); return true;
+            case 124: TrainingSettings.toggleAutoChangeArea(); openExploreMenu(); return true;
+            case 125: TrainingSettings.toggleAutoExploreMap(); openExploreMenu(); return true;
+            case 126: showStatus(AutoFarmExplorer.status()); openExploreMenu(); return true;
+            case 127: QuestAssistant.toggle(); openQuestMenu(); return true;
+            case 108: showStatus(QuestAssistant.status()); openQuestMenu(); return true;
+            case 110: showStatus(WorldTraveler.status()); openUtilities(); return true;
             case 98: openBossMenu(); return true;
             case 99: openUtilities(); return true;
             case 117: openHub(); return true;
@@ -237,9 +275,10 @@ public final class ToolMenus {
                 showStatus("UP: " + TrainingController.status());
                 showStatus("Boss: " + BossController.status());
                 showStatus("Buôn: " + TradeController.status());
+                showStatus("Nhiệm vụ: " + QuestAssistant.status());
                 openUtilities(); return true;
             case 121:
-                showStatus("LyMeowz Smart Tools 2.0 - AI chạy trực tiếp trên máy.");
+                showStatus("LyMeowz Super Auto 3.0 - Tự học đường đi và tìm bãi.");
                 openUtilities(); return true;
             default: return false;
         }
