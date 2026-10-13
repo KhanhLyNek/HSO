@@ -81,6 +81,8 @@ public final class WorldTraveler {
                 memory.bestKnownLevelMap(GameCanvas.loadmap.idMap, level);
     }
 
+    public static String knownMapName(int mapId) { return memory.nameOf(mapId); }
+
     public static int edgesLearned() { return memory.knownEdges(); }
     public static int mapsLearned() { return memory.knownMaps(); }
     public static int journeyHops() { return transitions; }
