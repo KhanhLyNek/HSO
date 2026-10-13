@@ -7,6 +7,8 @@ import GameScreen.GameScreen;
 import Main.GameCanvas;
 import Thread_More.LoadMap;
 import netcommand.global.GlobalService;
+import tools.core.ModeArbiter;
+import tools.core.SuperToolEngine;
 
 /**
  * Battlefield zone assistant using HSO's original Change_Area request.
@@ -34,6 +36,10 @@ public final class BattlefieldAreaAssistant {
             stop();
             return;
         }
+        if (SuperToolEngine.activeMode() != ModeArbiter.IDLE) {
+            GameCanvas.addInfoChar("[Chiến Trường] Hãy dừng Auto khác trước.");
+            return;
+        }
         if (GameCanvas.loadmap == null || GameScreen.player == null ||
                 GameScreen.player.hp <= 0 ||
                 !BattlefieldPolicy.isBattlefieldMap(GameCanvas.loadmap.idMap)) {
@@ -58,6 +64,10 @@ public final class BattlefieldAreaAssistant {
 
     public static void tick(Player player) {
         if (!enabled) return;
+        if (SuperToolEngine.activeMode() != ModeArbiter.IDLE) {
+            stop();
+            return;
+        }
         if (player == null || player != GameScreen.player ||
                 player.hp <= 0 || player.Action == 4 ||
                 GameCanvas.loadmap == null ||
@@ -76,7 +86,7 @@ public final class BattlefieldAreaAssistant {
         if (GameCanvas.currentScreen != GameCanvas.game ||
                 GameCanvas.currentDialog != null ||
                 GameCanvas.subDialog != null ||
-                GameCanvas.menu2.isShowMenu) return;
+                (GameCanvas.menu2 != null && GameCanvas.menu2.isShowMenu)) return;
         if (now - lastScan < 1250L) return;
         lastScan = now;
         int count = 0;
