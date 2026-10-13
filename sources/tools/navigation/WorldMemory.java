@@ -45,6 +45,17 @@ public final class WorldMemory {
         if (visitCount[i] < 1000) visitCount[i]++;
     }
 
+    public int visitsByName(String text) {
+        if (text == null) return 0;
+        String target = text.trim().toLowerCase();
+        if (target.length() == 0) return 0;
+        for (int i = 0; i < nodes; i++) {
+            if (names[i] != null && names[i].trim().toLowerCase().equals(target))
+                return visitCount[i];
+        }
+        return 0;
+    }
+
     public int visits(int id) {
         int i = index(id);
         return i < 0 ? 0 : visitCount[i];
