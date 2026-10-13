@@ -261,6 +261,11 @@ public final class ToolMenus {
         }
     }
 
+    public static boolean onNextMonster(GameObjects.Player player) {
+        if (TrainingController.selectNextMonster(player)) return true;
+        return BossController.selectNextMonster(player);
+    }
+
     public static void playerTick(GameObjects.Player player) {
         TrainingController.tick(player);
         BossController.tick(player);
