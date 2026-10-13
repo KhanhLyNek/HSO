@@ -69,6 +69,8 @@ public final class BytecodePatcher implements Opcodes {
                             super.visitLabel(proceed);
                             targets++;
                         } else if (className.equals("netcommand/global/ReadMessenge") && name.equals("changeMap")) {
+                            super.visitMethodInsn(INVOKESTATIC, "tools/navigation/WorldTraveler",
+                                "onMapLeaving", "()V", false);
                             super.visitMethodInsn(INVOKESTATIC, "tools/trading/TradeController",
                                 "beforeMapChange", "()V", false);
                             before++;
@@ -154,6 +156,10 @@ public final class BytecodePatcher implements Opcodes {
                             } else if (className.equals("netcommand/global/ReadMessenge") && name.equals("changeMap")) {
                                 super.visitMethodInsn(INVOKESTATIC, "tools/trading/TradeController",
                                     "afterMapChange", "()V", false);
+                                super.visitMethodInsn(INVOKESTATIC, "tools/navigation/WorldTraveler",
+                                    "onMapChanged", "()V", false);
+                                super.visitMethodInsn(INVOKESTATIC, "tools/training/AutoFarmExplorer",
+                                    "onMapChanged", "()V", false);
                                 after++;
                             }
                         }
