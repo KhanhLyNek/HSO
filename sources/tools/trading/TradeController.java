@@ -172,6 +172,30 @@ public final class TradeController {
     public static void captureSourceNpc() { captureNpc(true); }
     public static void captureDestinationNpc() { captureNpc(false); }
 
+    public static void openSourceNpc() { openRecordedNpc(sourceNpc); }
+    public static void openDestinationNpc() { openRecordedNpc(destinationNpc); }
+
+    private static void openRecordedNpc(int id) {
+        Player p = GameScreen.player;
+        if (id < 0 || p == null) {
+            say("Chua luu NPC o cho giao dich.");
+            return;
+        }
+        for (int i = 0; i < GameScreen.Vecplayers.size(); i++) {
+            MainObject n = (MainObject) GameScreen.Vecplayers.elementAt(i);
+            if (n == null || n.isRemove || n.typeObject != 2 || n.getIDnpc() != id)
+                continue;
+            if (MainObject.getDistance(p.x, p.y, n.x, n.y) > p.wFocus) {
+                say("Hay den gan NPC truoc khi giao dich.");
+                return;
+            }
+            GameScreen.ObjFocus = n;
+            n.GiaoTiep();
+            return;
+        }
+        say("NPC khong hien dien o map nay.");
+    }
+
     private static void captureNpc(boolean source) {
         MainObject npc = GameScreen.ObjFocus;
         if (npc == null || npc.typeObject != 2) {
@@ -346,7 +370,8 @@ public final class TradeController {
     private static void finishEscort() {
         if (GameScreen.player != null) GameScreen.player.posTransRoad = null;
         state(ARRIVED);
-        say("Da den noi ban hang " + destinationName + ". Hay giao dich voi NPC Graham.");
+        say("Da den noi ban hang " + destinationName + ". Kiem tra NPC de ban hang.");
+        if (destinationNpc >= 0) openDestinationNpc();
     }
 
     private static MainObject findOwnedAnimal(Player p) {
