@@ -407,6 +407,9 @@ public class GameScreen extends MainScreen {
                     GlobalService.gI().set_Pk((byte) -1);
                     break;
                 }
+            case 12:
+                this.doArea();
+                break;
             case 13:
                 GlobalService.gI().Change_Area((byte) i2);
                 break;
