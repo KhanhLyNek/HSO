@@ -168,7 +168,7 @@ public final class BytecodePatcher implements Opcodes {
                 super.visit(V1_1, access, name, signature, superName, interfaces);
             }
         };
-        Remapper remapper = new Remapper(ASM9) {
+        Remapper remapper = new Remapper() {
             @Override
             public String map(String internalName) {
                 return "java/lang/StringBuilder".equals(internalName)
