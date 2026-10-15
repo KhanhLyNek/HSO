@@ -954,7 +954,12 @@ public class GameScreen extends MainScreen {
                 openLyMeowzMenu();
                 break;
             case 93:
-                GameCanvas.addInfoChar("LyMeowz log: " + lyDiagnostics.latestEvent());
+                for (int logIdx = 3; logIdx >= 0; logIdx--) {
+                    String item = lyDiagnostics.recentEvent(logIdx);
+                    if (item != null) GameCanvas.addInfoChar("LyMeowz " + item);
+                }
+                if (lyDiagnostics.recentEvent(0) == null)
+                    GameCanvas.addInfoChar("LyMeowz: Chua co nhat ky.");
                 openLyMeowzMenu();
                 break;
             case 89:
