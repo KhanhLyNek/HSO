@@ -141,6 +141,11 @@ public class GameScreen extends MainScreen {
     public iCommand cmdListFriend = new iCommand(T.listFriend, 15, this);
     public iCommand cmdLyMeowz = new iCommand("LyMeowz", 80, this);
     private boolean lyMeowzIntelligenceEnabled;
+    private final LyMeowzAIDirector lyDirector = new LyMeowzAIDirector();
+    private final LyMeowzRecovery lyRecovery = new LyMeowzRecovery();
+    private final LyMeowzDiagnostics lyDiagnostics = new LyMeowzDiagnostics();
+    private boolean lyMeowzWasDead;
+    private int lyMeowzRecoveryGateWait;
     private boolean lyMeowzQuestTravelEnabled;
     private int lyMeowzQuestTravelNpcId = -1;
     private int lyMeowzQuestTravelMap = -1;
@@ -361,6 +366,10 @@ public class GameScreen extends MainScreen {
                 " tu dong tim NPC qua map", 87, this));
         items.addElement(new iCommand("Kiem tra tuyen NPC da hoc", 88, this));
         items.addElement(new iCommand("Luu ban do LyMeowz", 89, this));
+        items.addElement(new iCommand("Tu lam nhiem vu khi xong", 90, this));
+        items.addElement(new iCommand("Tu hoi sinh va quay lai bai", 91, this));
+        items.addElement(new iCommand("Thong ke luyen tap", 92, this));
+        items.addElement(new iCommand("Nhat ky LyMeowz", 93, this));
         items.addElement(new iCommand("Quay lai", 81, this));
         GameCanvas.menu2.startAt(items, 2, "LyMeowz", false, null);
     }
@@ -408,6 +417,10 @@ public class GameScreen extends MainScreen {
     private void stopLyMeowzQuestTravel(String reason) {
         if (!lyMeowzQuestTravelEnabled) return;
         lyMeowzQuestTravelEnabled = false;
+        if (reason != null && (reason.indexOf("Khong") >= 0 ||
+                reason.indexOf("Bi ket") >= 0 ||
+                reason.indexOf("Chua") >= 0))
+            lyDiagnostics.failure(reason);
         if (lyMeowzQuestTravelOwnsPath && player != null) {
             player.posTransRoad = null;
             player.countAutoMove = 0;
@@ -480,6 +493,111 @@ public class GameScreen extends MainScreen {
         return true;
     }
 
+    /** Native player progression events; no synthetic EXP is generated. */
+    public void lyMeowzRecordQuestKill() {
+        lyDiagnostics.questKill();
+    }
+
+    private void updateLyMeowzDirectorAndRecovery() {
+        if (player == null || GameCanvas.loadmap == null ||
+                GameCanvas.gameTick % 12 != 0) return;
+        long now = System.currentTimeMillis();
+        boolean alive = player.hp > 0 && player.Action != 4;
+        int mapId = GameCanvas.loadmap.idMap;
+        int areaId = LoadMap.Area & 255;
+        lyDiagnostics.observe(player.Lv, player.phantramLv, now);
+        if (!alive && !lyMeowzWasDead) lyDiagnostics.death();
+        lyMeowzWasDead = !alive;
+        int recoverAction = lyRecovery.update(alive, mapId, areaId, player.x, player.y, now);
+        if (recoverAction == LyMeowzRecovery.REQUEST_REVIVE) {
+            if (lyMeowzQuestTravelEnabled)
+                stopLyMeowzQuestTravel("LyMeowz: Tam dung vi nhan vat chet.");
+            // Identical to the game's confirmed revive / return-village command.
+            // Only sent ONCE and only after the user enabled recovery in LyMeowz.
+            GlobalService.gI().gohome(LoadMap.typeMap == 2 ? (byte) 1 : (byte) 0);
+            lyDiagnostics.event("Da yeu cau hoi sinh theo giao thuc game");
+        }
+        if (lyRecovery.state() == LyMeowzRecovery.RETURNING &&
+                GameCanvas.currentScreen == GameCanvas.game && LoadMapScreen.isNextMap) {
+            updateLyMeowzRecoveryMovement();
+        }
+        int questId = -1;
+        if (GameObjects.MainQuest.vecQuestFinish != null &&
+                GameObjects.MainQuest.vecQuestFinish.size() > 0) {
+            GameObjects.MainQuest quest =
+                    (GameObjects.MainQuest) GameObjects.MainQuest.vecQuestFinish.elementAt(0);
+            if (quest != null) questId = quest.ID;
+        }
+        int action = lyDirector.update(!alive, lyMeowzQuestTravelEnabled,
+                lyRecovery.state() == LyMeowzRecovery.RETURNING, questId);
+        if (action == LyMeowzAIDirector.START_TURN_IN &&
+                GameCanvas.currentScreen == GameCanvas.game &&
+                LoadMapScreen.isNextMap && !lyMeowzQuestTravelEnabled) {
+            toggleLyMeowzQuestTravel();
+            if (!lyMeowzQuestTravelEnabled)
+                lyDiagnostics.failure("Khong the bat dan duong tra nhiem vu");
+            else
+                lyDiagnostics.event("AI Director bat dan duong den NPC");
+        }
+    }
+
+    private void updateLyMeowzRecoveryMovement() {
+        if (player == null || player.hp <= 0 || lyMeowzQuestTravelEnabled) return;
+        if (player.posTransRoad != null) return;
+        int mapId = GameCanvas.loadmap.idMap;
+        int areaId = LoadMap.Area & 255;
+        if (mapId == lyRecovery.targetMap() && areaId == lyRecovery.targetArea()) {
+            if (MainObject.getDistance(player.x, player.y,
+                    lyRecovery.targetX(), lyRecovery.targetY()) <= 32) {
+                lyRecovery.completed();
+                lyMeowzRecoveryGateWait = 0;
+                lyDiagnostics.event("Da quay lai vi tri truoc khi chet");
+                if (lyMeowzIntelligenceEnabled && player.hp > 0) {
+                    Player.isCurAutoFire = true;
+                    Player.isAutoFire = (byte) 1;
+                }
+                return;
+            }
+            if (!lyMeowzQuestMoveTo(lyRecovery.targetX(), lyRecovery.targetY(), false)) {
+                lyRecovery.failed();
+                lyDiagnostics.failure("Khong co duong ve bai sau hoi sinh");
+            }
+            return;
+        }
+        int[] nextGate = LyMeowzMapTransitions.nextGate(mapId, areaId,
+                lyRecovery.targetMap(), lyRecovery.targetArea());
+        if (nextGate == null) {
+            lyRecovery.failed();
+            lyDiagnostics.failure("Thieu tuyen da hoc de quay ve bai");
+            return;
+        }
+        Model.Point nearest = null;
+        int best = (LoadMap.wTile * 3) * (LoadMap.wTile * 3);
+        for (int i = 0; i < LoadMap.vecPointChange.size(); i++) {
+            Model.Point p = (Model.Point) LoadMap.vecPointChange.elementAt(i);
+            int dx = p.x - nextGate[0], dy = p.y - nextGate[1];
+            int d = dx * dx + dy * dy;
+            if (d < best) { best = d; nearest = p; }
+        }
+        if (nearest == null) {
+            lyRecovery.failed();
+            lyDiagnostics.failure("Khong tim thay cong hoi sinh");
+            return;
+        }
+        if (MainObject.getDistance(player.x, player.y, nearest.x, nearest.y) <= 16) {
+            if (++lyMeowzRecoveryGateWait > 50) {
+                lyRecovery.failed();
+                lyDiagnostics.failure("Cong ve bai khong chuyen map");
+            }
+            return;
+        }
+        lyMeowzRecoveryGateWait = 0;
+        if (!lyMeowzQuestMoveTo(nearest.x, nearest.y, false)) {
+            lyRecovery.failed();
+            lyDiagnostics.failure("Khong tim duoc duong ve cong");
+        }
+    }
+
     private void updateLyMeowzQuestTravel() {
         if (!lyMeowzQuestTravelEnabled || GameCanvas.loadmap == null || player == null ||
                 !LoadMapScreen.isNextMap || GameCanvas.currentScreen != GameCanvas.game ||
@@ -505,6 +623,7 @@ public class GameScreen extends MainScreen {
         if (lyMeowzQuestTravelMap != mapId || lyMeowzQuestTravelArea != areaId) {
             lyMeowzQuestTravelMap = mapId;
             lyMeowzQuestTravelArea = areaId;
+            lyDiagnostics.mapHop(mapId, areaId);
             lyMeowzQuestTravelWaitTicks = 0;
             lyMeowzQuestTravelNpcWaitTicks = 0;
             lyMeowzQuestTravelWaitingForMap = false;
@@ -613,6 +732,27 @@ public class GameScreen extends MainScreen {
                 break;
             case 87:
                 toggleLyMeowzQuestTravel();
+                openLyMeowzMenu();
+                break;
+            case 90:
+                lyDirector.setEnabled(lyDirector.state() == LyMeowzAIDirector.OFF);
+                GameCanvas.addInfoChar("LyMeowz AI Director: " +
+                        (lyDirector.state() == LyMeowzAIDirector.OFF ? "TAT" : "BAT"));
+                openLyMeowzMenu();
+                break;
+            case 91:
+                lyRecovery.setEnabled(!lyRecovery.enabled());
+                lyDiagnostics.event("Che do hoi sinh " + (lyRecovery.enabled() ? "bat" : "tat"));
+                GameCanvas.addInfoChar("LyMeowz: Tu hoi sinh/ve bai " +
+                        (lyRecovery.enabled() ? "BAT" : "TAT"));
+                openLyMeowzMenu();
+                break;
+            case 92:
+                GameCanvas.addInfoChar(lyDiagnostics.summary(System.currentTimeMillis()));
+                openLyMeowzMenu();
+                break;
+            case 93:
+                GameCanvas.addInfoChar("LyMeowz log: " + lyDiagnostics.latestEvent());
                 openLyMeowzMenu();
                 break;
             case 89:
@@ -1295,6 +1435,7 @@ public class GameScreen extends MainScreen {
                     LyMeowzNpcMapRegistry.remember(lyQuest.idNPC_To, GameCanvas.loadmap.idMap, LoadMap.Area & 255);
             }
         }
+        updateLyMeowzDirectorAndRecovery();
         updateLyMeowzQuestTravel();
         int i = 0;
         while (i < vecDataeff.size()) {
