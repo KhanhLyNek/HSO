@@ -1545,9 +1545,9 @@ public class GameScreen extends MainScreen {
                     break;
                 }
                 short s5 = 0;
-                while (true) {
+                while (s5 < length2) {
                     short s6 = s5;
-                    if (s6 < length2) {
+                    {
                         if (GameCanvas.loadmap.mapFind[s4][s6] > 1 && setContinue(s4, s6, GameCanvas.loadmap.mapFind) && GameCanvas.loadmap.mapFind[s4][s6] + CRes.setDis(s4, s6, i8, i9) < i15 + CRes.setDis(i13, i14, i8, i9)) {
                             i13 = s4;
                             i14 = s6;
