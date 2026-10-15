@@ -5,6 +5,7 @@ import CLib.mSystem;
 import CLib.mVector;
 import GameEffect.EffectCharWearing;
 import GameScreen.GameScreen;
+import GameScreen.LyMeowzTrainingPlanner;
 import GameScreen.MainScreen;
 import GameScreen.PaintInfoGameScreen;
 import InterfaceComponents.ChatTextField;
@@ -750,7 +751,14 @@ public class Player extends MainObject {
         // Respect the native auto-combat cancellation and never retarget while dead.
         if (!isCurAutoFire || isAutoFire < 0 || this.hp <= 0 || this.Action == 4)
             return true;
+        if (LyMeowzTrainingPlanner.needsRecovery(this.hp, this.maxHp, this.mp, this.maxMp)) {
+            // Existing native HP/MP automation can replenish before engaging again.
+            GameScreen.ObjFocus = null;
+            PaintInfoGameScreen.isPaintInfoFocus = false;
+            return true;
+        }
         MainObject best = null;
+        int bestScore = Integer.MAX_VALUE;
         int bestDistance = 2147483647;
         int bestCrowding = 2147483647;
         boolean bestIsQuest = false;
@@ -792,11 +800,17 @@ public class Player extends MainObject {
                     if (nearbyPlayers >= 4) break;
                 }
             }
+            int weightedDistance = distance + nearbyPlayers * crowdPenalty;
+            int score = LyMeowzTrainingPlanner.score(weightedDistance,
+                    this.Lv, mob.Lv, mob.hp, mob.maxHp);
+            if (score == Integer.MAX_VALUE) continue;
             if (best == null ||
                     (questTarget && !bestIsQuest) ||
-                    (questTarget == bestIsQuest && (distance + nearbyPlayers * crowdPenalty < bestDistance + bestCrowding * crowdPenalty ||
-                    (distance + nearbyPlayers * crowdPenalty == bestDistance + bestCrowding * crowdPenalty && distance < bestDistance)))) {
+                    (questTarget == bestIsQuest &&
+                            (score < bestScore ||
+                            (score == bestScore && distance < bestDistance)))) {
                 best = mob;
+                bestScore = score;
                 bestDistance = distance;
                 bestCrowding = nearbyPlayers;
                 bestIsQuest = questTarget;
