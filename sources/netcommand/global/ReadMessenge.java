@@ -699,7 +699,7 @@ public class ReadMessenge extends AvMain {
                 mainObject.timedie = GameCanvas.timeNow;
             }
             byte[] bArr = new byte[12];
-            ?? r0 = new short[12];
+            short[][] r0 = new short[12][3];
             for (int i = 0; i < r0.length; i++) {
                 r0[i] = new short[3];
             }
