@@ -51,6 +51,32 @@ Use GitHub Actions:
 - `HSO real CLDC JAR build (release candidate)`
 - `HSO J2ME source diagnostics (NOT release)`
 
+## Runtime crash fix: missing mount animation arrays
+
+Observed Android/J2ME stack:
+`GameObjects.MainObject.updateMount → MainObject.update → Other_Players.update`.
+
+**Cause:** a remote character with `typeMount` may be updated before
+`ReadMessenge.catalogyMonster()` has finished filling the static mount
+animation arrays. Direct access to `MountTemplate.dx[typeMount][...]`,
+`dy`, `DY_CHAR_*` and `FRAME_MOVE_*` can throw an NPE or array bounds error.
+
+**Fixes committed:**
+- `MountTemplate.hasAnimationData(type)` checks all required outer/inner
+  rows, sizes and the optional type ID before animation.
+- `MainObject.updateMount()` skips incomplete animation without clearing
+  `typeMount`, and uses captured row pointers when they exist.
+- `getVmount()`, `isMountFly()`, painting/front-frame checks are safe while
+  the catalogue is absent. Missing animation resumes when it arrives.
+- The actual `MainObject.class` and `MountTemplate.class` are now
+  compiled into the CLDC JAR rather than relying on the stale resource classes.
+- `tests/LyMeowzMountCrashTest.java` exercises missing arrays, invalid
+  indices, incomplete rows and later animation recovery.
+
+The J2ME build **does not prove** that every runtime path works on Android:
+reinstall the newest artifact and re-enter a crowded map to test this exact
+crash, ideally with several mounted players onscreen.
+
 ## Manual J2ME runtime tests still required
 
 Building and preverification are not a substitute for running the MIDlet in
