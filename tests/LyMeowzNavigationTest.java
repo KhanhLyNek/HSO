@@ -1,6 +1,7 @@
 import GameScreen.LyMeowzMapReader;
 import GameScreen.LyMeowzMapTransitions;
 import GameScreen.LyMeowzNpcMapRegistry;
+import GameScreen.LyMeowzWorldStore;
 
 /** JVM smoke tests for CLDC-safe navigation data structures. */
 public final class LyMeowzNavigationTest {
@@ -41,6 +42,37 @@ public final class LyMeowzNavigationTest {
         check(LyMeowzMapReader.route(tiles,3,3,0,0,2,0,4).length == 0, "step limit");
         check(LyMeowzMapReader.route(tiles,3,3,0,0,1,0,20).length == 0, "blocked target");
         check(LyMeowzMapReader.route(tiles,3,3,-1,0,2,0,20).length == 0, "bounds");
+        // Guard against false teleport->gate associations.
+        LyMeowzMapTransitions.clear();
+        check(!LyMeowzMapTransitions.confirmedTransition(11, 3, 12, 4, 241, 120, 1000L),
+                "teleport cannot teach without armed gate");
+        LyMeowzMapTransitions.armGate(11, 3, 240, 120, 1000L);
+        check(LyMeowzMapTransitions.confirmedTransition(11, 3, 12, 4, 244, 123, 1100L),
+                "server transition from approached gate");
+        int[] areaHop = LyMeowzMapTransitions.nextGate(11, 3, 12, 4);
+        check(areaHop != null && areaHop.length == 4 && areaHop[2] == 12 && areaHop[3] == 4,
+                "destination map AND area");
+        check(LyMeowzMapTransitions.nextGate(11, 2, 12, 4) == null,
+                "wrong origin area must not use portal");
+        LyMeowzMapTransitions.armGate(12, 4, 100, 100, 1000L);
+        check(!LyMeowzMapTransitions.confirmedTransition(12, 4, 13, 1, 100, 100, 21001L),
+                "expired gate arm must not learn");
+        LyMeowzNpcMapRegistry.remember(420, 12, 4);
+        check(LyMeowzNpcMapRegistry.findArea(420) == 4, "NPC area recorded");
+        byte[] saved = LyMeowzWorldStore.encode();
+        LyMeowzMapTransitions.clear();
+        LyMeowzNpcMapRegistry.clear();
+        check(LyMeowzMapTransitions.nextGate(11, 3, 12, 4) == null, "cleared graph");
+        LyMeowzWorldStore.decode(saved);
+        check(LyMeowzNpcMapRegistry.findMap(420) == 12 &&
+                LyMeowzNpcMapRegistry.findArea(420) == 4, "persist NPC location");
+        check(LyMeowzMapTransitions.nextGate(11, 3, 12, 4) != null,
+                "persist confirmed gate");
+        byte[] bad = new byte[] {0,1,2,3,4,5,6,7,8,9,10};
+        boolean invalid = false;
+        try { LyMeowzWorldStore.decode(bad); }
+        catch (java.io.IOException expected) { invalid = true; }
+        check(invalid, "reject malformed RMS cache");
         System.out.println("LyMeowz navigation / NPC registry / map-graph tests: PASS");
     }
 }
