@@ -341,6 +341,7 @@ public class GameScreen extends MainScreen {
                 "Level up your intelligence", 82, this));
         items.addElement(new iCommand("Tien do nhiem vu diet quai", 83, this));
         items.addElement(new iCommand("Tim NPC tra nhiem vu", 84, this));
+        items.addElement(new iCommand("Mo menu tra nhiem vu", 85, this));
         items.addElement(new iCommand("Quay lai", 81, this));
         GameCanvas.menu2.startAt(items, 2, "LyMeowz", false, null);
     }
@@ -368,6 +369,24 @@ public class GameScreen extends MainScreen {
                 int remaining = Player.lyMeowzQuestKillsRemaining();
                 GameCanvas.addInfoChar("LyMeowz - Con " + remaining + " quai can diet cho nhiem vu.");
                 openLyMeowzMenu();
+                break;
+            case 85:
+                boolean openedQuest = false;
+                for (int q = 0; q < GameObjects.MainQuest.vecQuestFinish.size(); q++) {
+                    GameObjects.MainQuest quest = (GameObjects.MainQuest) GameObjects.MainQuest.vecQuestFinish.elementAt(q);
+                    if (quest == null) continue;
+                    MainObject npc = MainObject.get_Object(quest.idNPC_To, (byte) 2);
+                    if (npc instanceof GameObjects.NPC &&
+                            MainObject.getDistance(player.x, player.y, npc.x, npc.y) <= 100) {
+                        ((GameObjects.NPC) npc).NhiemVu();
+                        openedQuest = true;
+                        break;
+                    }
+                }
+                if (!openedQuest) {
+                    GameCanvas.addInfoChar("LyMeowz: Can den gan NPC co nhiem vu da hoan thanh.");
+                    openLyMeowzMenu();
+                }
                 break;
             case 84:
                 int questNpcId = -1;
