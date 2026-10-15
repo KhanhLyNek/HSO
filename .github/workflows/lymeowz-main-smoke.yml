@@ -5,6 +5,7 @@ on:
     paths:
       - 'sources/GameScreen/GameScreen.java'
       - 'sources/GameObjects/Player.java'
+      - 'sources/GameObjects/NPC.java'
       - 'sources/GameScreen/LyMeowzMapReader.java'
       - 'sources/GameScreen/LyMeowzNpcMapRegistry.java'
       - 'sources/GameScreen/LyMeowzMapTransitions.java'
@@ -64,6 +65,7 @@ jobs:
           javac -encoding UTF-8 -cp resources:build/smoke-stubs -d build/smoke \
             sources/GameScreen/GameScreen.java \
             sources/GameObjects/Player.java \
+            sources/GameObjects/NPC.java \
             sources/GameScreen/LyMeowzMapReader.java \
             sources/GameScreen/LyMeowzNpcMapRegistry.java \
             sources/GameScreen/LyMeowzMapTransitions.java \
@@ -71,6 +73,7 @@ jobs:
             sources/Main/ChildLocationDiagnostics.java 2>&1 | tee build/smoke-compile.log
           test -f build/smoke/GameScreen/GameScreen.class
           test -f build/smoke/GameObjects/Player.class
+          test -f build/smoke/GameObjects/NPC.class
           test -f build/smoke/GameScreen/LyMeowzMapReader.class
       - name: Test obstacle routing and unreachable goals
         run: |
