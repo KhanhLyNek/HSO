@@ -15,6 +15,8 @@ on:
       - 'sources/GameScreen/LyMeowzAIDirector.java'
       - 'sources/GameScreen/LyMeowzRecovery.java'
       - 'sources/GameScreen/LyMeowzDiagnostics.java'
+      - 'sources/GameScreen/LyMeowzTrainingPlanner.java'
+      - 'tests/LyMeowzTrainingTest.java'
       - 'sources/GameObjects/MainQuest.java'
       - 'tests/LyMeowzDirectorTest.java'
       - '.github/workflows/lymeowz-main-smoke.yml'
@@ -86,6 +88,7 @@ jobs:
             sources/GameScreen/LyMeowzAIDirector.java \
             sources/GameScreen/LyMeowzRecovery.java \
             sources/GameScreen/LyMeowzDiagnostics.java \
+            sources/GameScreen/LyMeowzTrainingPlanner.java \
             sources/GameObjects/MainQuest.java \
             sources/netcommand/global/ReadMessenge.java \
             sources/Main/ChildLocationDiagnostics.java 2>&1 | tee build/smoke-compile.log
@@ -128,6 +131,11 @@ jobs:
           test -f build/smoke/GameScreen/LyMeowzAIDirector.class
           test -f build/smoke/GameScreen/LyMeowzRecovery.class
           test -f build/smoke/GameScreen/LyMeowzDiagnostics.class
+      - name: Test safe training target scoring
+        run: |
+          set -euo pipefail
+          javac -cp build/smoke -d build/smoke tests/LyMeowzTrainingTest.java
+          java -cp build/smoke LyMeowzTrainingTest
       - name: Upload compile output
         if: always()
         uses: actions/upload-artifact@v4
