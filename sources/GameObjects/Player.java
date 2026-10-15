@@ -711,6 +711,14 @@ public class Player extends MainObject {
         int bestCrowding = 2147483647;
         boolean bestIsQuest = false;
         boolean hasQuest = lyMeowzHasActiveKillQuest();
+        // Remember a quest target briefly to avoid rapid focus switching each tick.
+        MainObject current = GameScreen.ObjFocus;
+        if (hasQuest && current != null && current.typeObject == 1 &&
+                current.Action != 4 && !current.isDie && !current.isSend && current.hp > 0 &&
+                current.Lv <= this.Lv && isLyMeowzQuestMonster(current) &&
+                MainObject.getDistance(this.x, this.y, current.x, current.y) < (this.wFocus * 3) / 2) {
+            return true;
+        }
         int range = (this.wFocus * 3) / 2;
         // A smaller crowd penalty than a full screen prevents chasing distant mobs.
         int crowdPenalty = range / 4;
