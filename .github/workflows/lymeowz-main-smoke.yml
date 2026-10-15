@@ -33,6 +33,8 @@ jobs:
           assert 'this.hp <= 0' in player
           assert 'nearbyPlayers < bestCrowding' in player
           assert 'other.typeObject == 0' in player
+          assert 'Player.isAutoFire = (byte) 1;' in game
+          assert 'Player.xBeginAutoFire = player.x;' in game
           print('LyMeowz integration static checks: PASS')
           PY
       - name: Compile changed game sources against original class resources
