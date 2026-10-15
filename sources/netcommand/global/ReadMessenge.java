@@ -973,14 +973,14 @@ public class ReadMessenge extends AvMain {
             GameCanvas.loadmap.idMap = message.reader().readShort();
             if (lyPreviousMap >= 0 && lyPreviousMap != GameCanvas.loadmap.idMap) {
                 Point lyGate = null;
-                int lyDistance = 80;
+                int lyDistanceSquared = 80 * 80;
                 for (int ly = 0; ly < LoadMap.vecPointChange.size(); ly++) {
                     Point candidate = (Point) LoadMap.vecPointChange.elementAt(ly);
                     int dx = candidate.x - lyPreviousX;
                     int dy = candidate.y - lyPreviousY;
                     int distance = dx * dx + dy * dy;
-                    if (distance < lyDistance * lyDistance) {
-                        lyDistance = (int) Math.sqrt(distance);
+                    if (distance < lyDistanceSquared) {
+                        lyDistanceSquared = distance;
                         lyGate = candidate;
                     }
                 }
