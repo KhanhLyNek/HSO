@@ -16,6 +16,7 @@ on:
       - 'sources/GameScreen/LyMeowzRecovery.java'
       - 'sources/GameScreen/LyMeowzDiagnostics.java'
       - 'sources/GameScreen/LyMeowzTrainingPlanner.java'
+      - 'sources/GameScreen/LyMeowzTrainingSpotRegistry.java'
       - 'tests/LyMeowzTrainingTest.java'
       - 'sources/GameObjects/MainQuest.java'
       - 'tests/LyMeowzDirectorTest.java'
@@ -89,6 +90,7 @@ jobs:
             sources/GameScreen/LyMeowzRecovery.java \
             sources/GameScreen/LyMeowzDiagnostics.java \
             sources/GameScreen/LyMeowzTrainingPlanner.java \
+            sources/GameScreen/LyMeowzTrainingSpotRegistry.java \
             sources/GameObjects/MainQuest.java \
             sources/netcommand/global/ReadMessenge.java \
             sources/Main/ChildLocationDiagnostics.java 2>&1 | tee build/smoke-compile.log
