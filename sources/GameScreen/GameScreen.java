@@ -144,6 +144,8 @@ public class GameScreen extends MainScreen {
     private boolean lyMeowzAutoSpotEnabled;
     private int[] lyMeowzChosenSpot;
     private int lyMeowzSpotIdleTicks;
+    private int lyMeowzSpotLastMap = -1;
+    private int lyMeowzSpotLastArea = -1;
     private int lyMeowzSpotWaitTicks;
     private int lyMeowzSpotCooldownTicks;
     private boolean lyMeowzSpotAreaRequested;
@@ -390,6 +392,8 @@ public class GameScreen extends MainScreen {
 
     /** Explicitly opt-in quest NPC navigation; leaves quest confirmation to the native menu. */
     private void toggleLyMeowzQuestTravel() {
+        if (!lyMeowzQuestTravelEnabled && lyMeowzChosenSpot != null)
+            stopLyMeowzSpotTravel("Uu tien nhiem vu, dung doi bai");
         if (lyMeowzQuestTravelEnabled) {
             stopLyMeowzQuestTravel("LyMeowz: Da dung tim duong NPC.");
             return;
@@ -660,11 +664,22 @@ public class GameScreen extends MainScreen {
             return;
         if (lyMeowzQuestTravelEnabled || lyRecovery.state() == LyMeowzRecovery.RETURNING ||
                 player.hp <= 0 || player.Action == 4) {
-            if (lyMeowzChosenSpot != null) stopLyMeowzSpotTravel("Doi bai tam dung");
+            // Never clear another module's route while yielding to its priority.
+            if (lyMeowzChosenSpot != null) {
+                lyMeowzChosenSpot = null;
+                lyMeowzSpotCooldownTicks = 120;
+                lyMeowzSpotAreaRequested = false;
+            }
             return;
         }
         int mapId = GameCanvas.loadmap.idMap;
         int areaId = LoadMap.Area & 255;
+        if (lyMeowzSpotLastMap != mapId || lyMeowzSpotLastArea != areaId) {
+            lyMeowzSpotLastMap = mapId;
+            lyMeowzSpotLastArea = areaId;
+            lyMeowzSpotWaitTicks = 0;
+            lyMeowzSpotAreaRequested = false;
+        }
         if (lyMeowzChosenSpot == null) {
             if (lyMeowzSpotCooldownTicks > 0) {
                 lyMeowzSpotCooldownTicks--;
