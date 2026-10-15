@@ -673,8 +673,11 @@ public class Player extends MainObject {
                 MainObject other = (MainObject) GameScreen.Vecplayers.elementAt(j);
                 if (other != null && other != this && other.typeObject == 0 &&
                         other.Action != 4 &&
-                        MainObject.getDistance(mob.x, mob.y, other.x, other.y) < 160)
+                        MainObject.getDistance(mob.x, mob.y, other.x, other.y) < 160) {
                     nearbyPlayers++;
+                    // Beyond four nearby players this spot is already heavily contested.
+                    if (nearbyPlayers >= 4) break;
+                }
             }
             if (best == null ||
                     distance + nearbyPlayers * crowdPenalty < bestDistance + bestCrowding * crowdPenalty ||
