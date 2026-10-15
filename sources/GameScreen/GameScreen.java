@@ -139,6 +139,7 @@ public class GameScreen extends MainScreen {
     public iCommand cmdSetDoSat = new iCommand(T.dosat, 10, this);
     public iCommand cmdChangeMap = new iCommand(T.changeArea, 12, this);
     public iCommand cmdListFriend = new iCommand(T.listFriend, 15, this);
+    public iCommand cmdLyMeowz = new iCommand("LyMeowz", 150, this);
     public iCommand cmdAutoFire = new iCommand(T.autoFire, 16, this);
     public iCommand cmdEndHelp = new iCommand(T.endHelp, 17, this);
     public iCommand cmdAutoItem = new iCommand(T.autoItem, 18, this);
@@ -268,6 +269,7 @@ public class GameScreen extends MainScreen {
     public void MenuChucNang() {
         mVector mvector = new mVector("GameScr menu3");
         mvector.addElement(this.cmdListFriend);
+        mvector.addElement(this.cmdLyMeowz);
         String stringBuffer = new StringBuffer().append(T.off).append(" ").append(T.dosat).toString();
         if (player.typePk != 0) {
             mvector.addElement(this.cmdSetPk);
@@ -299,6 +301,13 @@ public class GameScreen extends MainScreen {
         GameCanvas.menu2.startAt(mvector, 2, T.chucnang, false, null);
     }
 
+    /** First LyMeowz entry point, using the game's existing native menu UI. */
+    public void openLyMeowzMenu() {
+        mVector items = new mVector("LyMeowz menu");
+        items.addElement(new iCommand("Quay lại", 151, this));
+        GameCanvas.menu2.startAt(items, 2, "LyMeowz", false, null);
+    }
+
     public void doArea() {
         GlobalService.gI().Request_Area();
         isReArea = true;
@@ -309,6 +318,12 @@ public class GameScreen extends MainScreen {
     public void commandPointer(int i, int i2) {
         MainItem mainItem;
         switch (i) {
+            case 150:
+                openLyMeowzMenu();
+                break;
+            case 151:
+                MenuChucNang();
+                break;
             case 0:
                 if (infoGame.isMapThachdau()) {
                     return;
