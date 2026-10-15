@@ -443,8 +443,13 @@ public class GameScreen extends MainScreen {
                         }
                     } else {
                         int knownMap = LyMeowzNpcMapRegistry.findMap(questNpcId);
-                        if (knownMap >= 0)
-                            GameCanvas.addInfoChar("LyMeowz: NPC " + questNpcId + " tung thay o map " + knownMap + ".");
+                        if (knownMap >= 0) {
+                            int[] gate = LyMeowzMapTransitions.nextGate(GameCanvas.loadmap.idMap, knownMap);
+                            if (gate != null)
+                                GameCanvas.addInfoChar("LyMeowz: Cong tiep theo den map " + knownMap + " tai " + gate[0] + "," + gate[1] + ".");
+                            else
+                                GameCanvas.addInfoChar("LyMeowz: NPC " + questNpcId + " tung thay o map " + knownMap + ". Chua hoc tuyen duong.");
+                        }
                         else
                             GameCanvas.addInfoChar("LyMeowz: Chua biet map cua NPC " + questNpcId + ".");
                     }
