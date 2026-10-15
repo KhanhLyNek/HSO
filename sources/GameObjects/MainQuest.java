@@ -222,6 +222,7 @@ public class MainQuest extends AvMain {
             }
         }
         if (str.length() > 0) {
+            if (GameCanvas.game != null) GameCanvas.game.lyMeowzRecordQuestKill();
             GameCanvas.addInfoChar(new StringBuffer().append(T.giet).append(mainMonster.name).append(": ").append(str).toString());
         }
     }
