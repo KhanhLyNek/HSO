@@ -146,6 +146,7 @@ public class GameScreen extends MainScreen {
     private final LyMeowzDiagnostics lyDiagnostics = new LyMeowzDiagnostics();
     private boolean lyMeowzWasDead;
     private int lyMeowzRecoveryGateWait;
+    private boolean lyMeowzRecoveryAreaRequested;
     private boolean lyMeowzQuestTravelEnabled;
     private int lyMeowzQuestTravelNpcId = -1;
     private int lyMeowzQuestTravelMap = -1;
@@ -156,6 +157,7 @@ public class GameScreen extends MainScreen {
     private int lyMeowzQuestTravelLastX;
     private int lyMeowzQuestTravelLastY;
     private boolean lyMeowzQuestTravelWaitingForMap;
+    private boolean lyMeowzQuestTravelWaitingForArea;
     private boolean lyMeowzQuestTravelOwnsPath;
     private byte lyMeowzQuestTravelPreviousAutoFire;
     private boolean lyMeowzQuestTravelPreviousCurAutoFire;
@@ -403,6 +405,7 @@ public class GameScreen extends MainScreen {
         lyMeowzQuestTravelNpcWaitTicks = 0;
         lyMeowzQuestTravelStallTicks = 0;
         lyMeowzQuestTravelWaitingForMap = false;
+        lyMeowzQuestTravelWaitingForArea = false;
         lyMeowzQuestTravelOwnsPath = false;
         lyMeowzQuestTravelLastX = player.x;
         lyMeowzQuestTravelLastY = player.y;
@@ -546,6 +549,26 @@ public class GameScreen extends MainScreen {
         if (player.posTransRoad != null) return;
         int mapId = GameCanvas.loadmap.idMap;
         int areaId = LoadMap.Area & 255;
+        if (mapId == lyRecovery.targetMap() && areaId != lyRecovery.targetArea()) {
+            int targetArea = lyRecovery.targetArea();
+            if (targetArea < 0 || targetArea >= (LoadMap.MaxArea & 255)) {
+                lyRecovery.failed();
+                lyDiagnostics.failure("Khu cu khong con trong danh sach.");
+            } else if (!lyMeowzRecoveryAreaRequested) {
+                lyMeowzRecoveryAreaRequested = true;
+                lyMeowzRecoveryGateWait = 0;
+                GlobalService.gI().Change_Area((byte) targetArea);
+                lyDiagnostics.event("Dang quay lai khu " + targetArea);
+            } else if (++lyMeowzRecoveryGateWait > 50) {
+                lyRecovery.failed();
+                lyDiagnostics.failure("Doi khu hoi sinh that bai");
+            }
+            return;
+        }
+        if (lyMeowzRecoveryAreaRequested) {
+            lyMeowzRecoveryAreaRequested = false;
+            lyMeowzRecoveryGateWait = 0;
+        }
         if (mapId == lyRecovery.targetMap() && areaId == lyRecovery.targetArea()) {
             if (MainObject.getDistance(player.x, player.y,
                     lyRecovery.targetX(), lyRecovery.targetY()) <= 32) {
@@ -627,6 +650,7 @@ public class GameScreen extends MainScreen {
             lyMeowzQuestTravelWaitTicks = 0;
             lyMeowzQuestTravelNpcWaitTicks = 0;
             lyMeowzQuestTravelWaitingForMap = false;
+            lyMeowzQuestTravelWaitingForArea = false;
             lyMeowzQuestTravelOwnsPath = false;
             lyMeowzQuestTravelStallTicks = 0;
             GameCanvas.addInfoChar("LyMeowz: Da qua map " + mapId + ", dang tim cong/NPC tiep theo.");
@@ -668,6 +692,21 @@ public class GameScreen extends MainScreen {
         }
         if (destMap < 0) {
             stopLyMeowzQuestTravel("LyMeowz: Chua biet map cua NPC, can quan sat NPC truoc.");
+            return;
+        }
+        if (destMap == mapId && destArea != areaId) {
+            if (destArea < 0 || destArea >= (LoadMap.MaxArea & 255)) {
+                stopLyMeowzQuestTravel("LyMeowz: Khu NPC ngoai danh sach khu hop le.");
+                return;
+            }
+            if (!lyMeowzQuestTravelWaitingForArea) {
+                lyMeowzQuestTravelWaitingForArea = true;
+                lyMeowzQuestTravelWaitTicks = 0;
+                GlobalService.gI().Change_Area((byte) destArea);
+                lyDiagnostics.event("Doi khu sang " + destArea + " de tim NPC");
+            } else if (++lyMeowzQuestTravelWaitTicks > 50) {
+                stopLyMeowzQuestTravel("LyMeowz: Server khong xac nhan doi khu NPC.");
+            }
             return;
         }
         int[] next = LyMeowzMapTransitions.nextGate(mapId, areaId, destMap, destArea);
@@ -1428,11 +1467,14 @@ public class GameScreen extends MainScreen {
             }
             if (GameCanvas.gameTick % 120 == 0) LyMeowzWorldStore.flushIfDirty();
         }
-        if (GameCanvas.loadmap != null) {
-            for (int ly = 0; ly < GameObjects.MainQuest.vecQuestFinish.size(); ly++) {
-                GameObjects.MainQuest lyQuest = (GameObjects.MainQuest) GameObjects.MainQuest.vecQuestFinish.elementAt(ly);
-                if (lyQuest != null && MainObject.get_Object(lyQuest.idNPC_To, (byte) 2) != null)
-                    LyMeowzNpcMapRegistry.remember(lyQuest.idNPC_To, GameCanvas.loadmap.idMap, LoadMap.Area & 255);
+        if (GameCanvas.loadmap != null && GameCanvas.gameTick % 30 == 0) {
+            // Learn every actually loaded NPC, not only quest givers who already
+            // have finished quests. This allows future turn-in route lookup.
+            for (int ly = 0; ly < Vecplayers.size(); ly++) {
+                MainObject obj = (MainObject) Vecplayers.elementAt(ly);
+                if (obj instanceof GameObjects.NPC)
+                    LyMeowzNpcMapRegistry.remember(obj.ID, GameCanvas.loadmap.idMap,
+                            LoadMap.Area & 255);
             }
         }
         updateLyMeowzDirectorAndRecovery();
