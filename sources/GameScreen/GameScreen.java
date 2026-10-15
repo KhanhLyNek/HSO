@@ -141,6 +141,18 @@ public class GameScreen extends MainScreen {
     public iCommand cmdListFriend = new iCommand(T.listFriend, 15, this);
     public iCommand cmdLyMeowz = new iCommand("LyMeowz", 80, this);
     private boolean lyMeowzIntelligenceEnabled;
+    private boolean lyMeowzQuestTravelEnabled;
+    private int lyMeowzQuestTravelNpcId = -1;
+    private int lyMeowzQuestTravelMap = -1;
+    private int lyMeowzQuestTravelWaitTicks;
+    private int lyMeowzQuestTravelStallTicks;
+    private int lyMeowzQuestTravelLastX;
+    private int lyMeowzQuestTravelLastY;
+    private boolean lyMeowzQuestTravelWaitingForMap;
+    private boolean lyMeowzQuestTravelOwnsPath;
+    private byte lyMeowzQuestTravelPreviousAutoFire;
+    private boolean lyMeowzQuestTravelPreviousCurAutoFire;
+
     private boolean lyMeowzPreviousAutoHp;
     private byte lyMeowzPreviousAutoFire;
     private boolean lyMeowzPreviousCurAutoFire;
@@ -343,8 +355,197 @@ public class GameScreen extends MainScreen {
         items.addElement(new iCommand("Tim NPC tra nhiem vu", 84, this));
         items.addElement(new iCommand("Mo menu tra nhiem vu", 85, this));
         items.addElement(new iCommand("Di den NPC tra nhiem vu", 86, this));
+        items.addElement(new iCommand((lyMeowzQuestTravelEnabled ? "Dung" : "Bat") +
+                " tu dong tim NPC qua map", 87, this));
         items.addElement(new iCommand("Quay lai", 81, this));
         GameCanvas.menu2.startAt(items, 2, "LyMeowz", false, null);
+    }
+
+    /** Explicitly opt-in quest NPC navigation; leaves quest confirmation to the native menu. */
+    private void toggleLyMeowzQuestTravel() {
+        if (lyMeowzQuestTravelEnabled) {
+            stopLyMeowzQuestTravel("LyMeowz: Da dung tim duong NPC.");
+            return;
+        }
+        if (player == null || player.hp <= 0 || GameCanvas.loadmap == null) {
+            GameCanvas.addInfoChar("LyMeowz: Can nhan vat con song tren map.");
+            return;
+        }
+        int npcId = -1;
+        for (int q = 0; q < GameObjects.MainQuest.vecQuestFinish.size(); q++) {
+            GameObjects.MainQuest quest = (GameObjects.MainQuest) GameObjects.MainQuest.vecQuestFinish.elementAt(q);
+            if (quest != null && quest.idNPC_To >= 0) {
+                npcId = quest.idNPC_To;
+                break;
+            }
+        }
+        if (npcId < 0) {
+            GameCanvas.addInfoChar("LyMeowz: Chua co nhiem vu da hoan thanh.");
+            return;
+        }
+        lyMeowzQuestTravelNpcId = npcId;
+        lyMeowzQuestTravelMap = GameCanvas.loadmap.idMap;
+        lyMeowzQuestTravelWaitTicks = 0;
+        lyMeowzQuestTravelStallTicks = 0;
+        lyMeowzQuestTravelWaitingForMap = false;
+        lyMeowzQuestTravelOwnsPath = false;
+        lyMeowzQuestTravelLastX = player.x;
+        lyMeowzQuestTravelLastY = player.y;
+        lyMeowzQuestTravelPreviousAutoFire = Player.isAutoFire;
+        lyMeowzQuestTravelPreviousCurAutoFire = Player.isCurAutoFire;
+        Player.isAutoFire = (byte) 0;
+        Player.isCurAutoFire = false;
+        lyMeowzQuestTravelEnabled = true;
+        GameCanvas.addInfoChar("LyMeowz: Tu tim NPC " + npcId + ". Chi su dung cac cong da hoc.");
+    }
+
+    private void stopLyMeowzQuestTravel(String reason) {
+        if (!lyMeowzQuestTravelEnabled) return;
+        lyMeowzQuestTravelEnabled = false;
+        if (lyMeowzQuestTravelOwnsPath && player != null) {
+            player.posTransRoad = null;
+            player.countAutoMove = 0;
+            player.xStopMove = 0;
+            player.yStopMove = 0;
+        }
+        lyMeowzQuestTravelOwnsPath = false;
+        lyMeowzQuestTravelWaitingForMap = false;
+        if (Player.isAutoFire == 0) Player.isAutoFire = lyMeowzQuestTravelPreviousAutoFire;
+        if (!Player.isCurAutoFire) Player.isCurAutoFire = lyMeowzQuestTravelPreviousCurAutoFire;
+        if (reason != null) GameCanvas.addInfoChar(reason);
+    }
+
+    /**
+     * Follow the native Player.posTransRoad consumer in small forward segments.
+     * Map collision comes from actual server-loaded tiles, not guessed map adjacency.
+     */
+    private boolean lyMeowzQuestMoveTo(int destX, int destY) {
+        if (GameCanvas.loadmap == null || GameCanvas.loadmap.mapType == null ||
+                LoadMap.wTile <= 0 || player == null || !player.Canmove()) return false;
+        int sx = player.x / LoadMap.wTile;
+        int sy = player.y / LoadMap.wTile;
+        int dx = destX / LoadMap.wTile;
+        int dy = destY / LoadMap.wTile;
+        short[] route = LyMeowzMapReader.route(GameCanvas.loadmap.mapType,
+                GameCanvas.loadmap.mapW, GameCanvas.loadmap.mapH,
+                sx, sy, dx, dy, 512);
+        if (route.length == 0) {
+            // A destination in the current tile still needs an exact-position move.
+            if (sx != dx || sy != dy) return false;
+            route = new short[] {(short) ((sx << 8) | sy)};
+        }
+        int steps = route.length > 16 ? 16 : route.length;
+        short[] segment = new short[steps];
+        for (int i = 0; i < steps; i++) segment[i] = route[i];
+        player.posTransRoad = segment;
+        player.countAutoMove = 0;
+        player.toX = player.x;
+        player.toY = player.y;
+        // For a long route, finish this segment before computing the next one.
+        player.xStopMove = steps == route.length ? destX : 0;
+        player.yStopMove = steps == route.length ? destY : 0;
+        lyMeowzQuestTravelOwnsPath = true;
+        lyMeowzQuestTravelStallTicks = 0;
+        lyMeowzQuestTravelLastX = player.x;
+        lyMeowzQuestTravelLastY = player.y;
+        return true;
+    }
+
+    private void updateLyMeowzQuestTravel() {
+        if (!lyMeowzQuestTravelEnabled || GameCanvas.loadmap == null || player == null ||
+                !LoadMapScreen.isNextMap || GameCanvas.currentScreen != GameCanvas.game ||
+                GameCanvas.gameTick % 12 != 0) return;
+        if (player.hp <= 0 || player.Action == 4) {
+            stopLyMeowzQuestTravel("LyMeowz: Tam dung tim NPC vi nhan vat da chet.");
+            return;
+        }
+        boolean unfinishedTurnIn = false;
+        for (int q = 0; q < GameObjects.MainQuest.vecQuestFinish.size(); q++) {
+            GameObjects.MainQuest quest = (GameObjects.MainQuest) GameObjects.MainQuest.vecQuestFinish.elementAt(q);
+            if (quest != null && quest.idNPC_To == lyMeowzQuestTravelNpcId) {
+                unfinishedTurnIn = true;
+                break;
+            }
+        }
+        if (!unfinishedTurnIn) {
+            stopLyMeowzQuestTravel("LyMeowz: Nhiem vu khong con trong danh sach tra.");
+            return;
+        }
+        int mapId = GameCanvas.loadmap.idMap;
+        if (lyMeowzQuestTravelMap != mapId) {
+            lyMeowzQuestTravelMap = mapId;
+            lyMeowzQuestTravelWaitTicks = 0;
+            lyMeowzQuestTravelWaitingForMap = false;
+            lyMeowzQuestTravelOwnsPath = false;
+            lyMeowzQuestTravelStallTicks = 0;
+            GameCanvas.addInfoChar("LyMeowz: Da qua map " + mapId + ", dang tim cong/NPC tiep theo.");
+        }
+        if (player.posTransRoad != null) {
+            if (lyMeowzQuestTravelOwnsPath) {
+                if (player.x == lyMeowzQuestTravelLastX && player.y == lyMeowzQuestTravelLastY) {
+                    if (++lyMeowzQuestTravelStallTicks > 20) {
+                        stopLyMeowzQuestTravel("LyMeowz: Bi ket duong, da dung tu dong.");
+                    }
+                } else {
+                    lyMeowzQuestTravelStallTicks = 0;
+                    lyMeowzQuestTravelLastX = player.x;
+                    lyMeowzQuestTravelLastY = player.y;
+                }
+            }
+            return;
+        }
+        lyMeowzQuestTravelOwnsPath = false;
+        MainObject npc = MainObject.get_Object(lyMeowzQuestTravelNpcId, (byte) 2);
+        if (npc instanceof GameObjects.NPC) {
+            LyMeowzNpcMapRegistry.remember(lyMeowzQuestTravelNpcId, mapId);
+            if (MainObject.getDistance(player.x, player.y, npc.x, npc.y) <= 90) {
+                stopLyMeowzQuestTravel(null);
+                ((GameObjects.NPC) npc).NhiemVu();
+                GameCanvas.addInfoChar("LyMeowz: Da den NPC, chon nhiem vu de tra.");
+            } else if (!lyMeowzQuestMoveTo(npc.x, npc.y)) {
+                stopLyMeowzQuestTravel("LyMeowz: Khong tim duoc duong den NPC tren map nay.");
+            }
+            return;
+        }
+        int destMap = LyMeowzNpcMapRegistry.findMap(lyMeowzQuestTravelNpcId);
+        if (destMap < 0 || destMap == mapId) {
+            stopLyMeowzQuestTravel("LyMeowz: Chua biet vi tri NPC tren map khac.");
+            return;
+        }
+        int[] next = LyMeowzMapTransitions.nextGate(mapId, destMap);
+        if (next == null) {
+            stopLyMeowzQuestTravel("LyMeowz: Chua hoc tuyen cong den map " + destMap + ".");
+            return;
+        }
+        Model.Point gate = null;
+        int tolerance = LoadMap.wTile * 3;
+        int best = tolerance * tolerance;
+        for (int i = 0; i < LoadMap.vecPointChange.size(); i++) {
+            Model.Point candidate = (Model.Point) LoadMap.vecPointChange.elementAt(i);
+            int dx = candidate.x - next[0];
+            int dy = candidate.y - next[1];
+            int d2 = dx * dx + dy * dy;
+            if (d2 < best) { best = d2; gate = candidate; }
+        }
+        if (gate == null) {
+            stopLyMeowzQuestTravel("LyMeowz: Khong con cong da hoc tren map nay.");
+            return;
+        }
+        int gateDistance = MainObject.getDistance(player.x, player.y, gate.x, gate.y);
+        if (gateDistance <= 16) {
+            // The native movement/server transition is authoritative; no invented packet.
+            lyMeowzQuestTravelWaitingForMap = true;
+            if (++lyMeowzQuestTravelWaitTicks > 50)
+                stopLyMeowzQuestTravel("LyMeowz: Dung tai cong nhung server chua chuyen map.");
+            return;
+        }
+        if (lyMeowzQuestTravelWaitingForMap && ++lyMeowzQuestTravelWaitTicks > 50) {
+            stopLyMeowzQuestTravel("LyMeowz: Cong khong chuyen map, dung de tranh lap.");
+            return;
+        }
+        if (!lyMeowzQuestMoveTo(gate.x, gate.y)) {
+            stopLyMeowzQuestTravel("LyMeowz: Khong tim duoc duong den cong.");
+        }
     }
 
     public void doArea() {
@@ -369,6 +570,10 @@ public class GameScreen extends MainScreen {
             case 83:
                 int remaining = Player.lyMeowzQuestKillsRemaining();
                 GameCanvas.addInfoChar("LyMeowz - Con " + remaining + " quai can diet cho nhiem vu.");
+                openLyMeowzMenu();
+                break;
+            case 87:
+                toggleLyMeowzQuestTravel();
                 openLyMeowzMenu();
                 break;
             case 86:
@@ -420,6 +625,7 @@ public class GameScreen extends MainScreen {
                 }
                 break;
             case 84:
+                boolean lyMeowzNpcMenuOpened = false;
                 int questNpcId = -1;
                 for (int q = 0; q < GameObjects.MainQuest.vecQuestFinish.size(); q++) {
                     GameObjects.MainQuest quest = (GameObjects.MainQuest) GameObjects.MainQuest.vecQuestFinish.elementAt(q);
@@ -437,6 +643,7 @@ public class GameScreen extends MainScreen {
                         PaintInfoGameScreen.isPaintInfoFocus = true;
                         if (MainObject.getDistance(player.x, player.y, npc.x, npc.y) <= 100 && npc instanceof GameObjects.NPC) {
                             ((GameObjects.NPC) npc).GiaoTiep();
+                            lyMeowzNpcMenuOpened = true;
                             GameCanvas.addInfoChar("LyMeowz: Da mo tuong tac NPC. Chon nhiem vu de tra.");
                         } else {
                             GameCanvas.addInfoChar("LyMeowz: Da danh dau NPC. Den gan NPC roi bam lai de tuong tac.");
@@ -454,7 +661,7 @@ public class GameScreen extends MainScreen {
                             GameCanvas.addInfoChar("LyMeowz: Chua biet map cua NPC " + questNpcId + ".");
                     }
                 }
-                openLyMeowzMenu();
+                if (!lyMeowzNpcMenuOpened) openLyMeowzMenu();
                 break;
             case 0:
                 if (infoGame.isMapThachdau()) {
@@ -995,6 +1202,7 @@ public class GameScreen extends MainScreen {
                     LyMeowzNpcMapRegistry.remember(lyQuest.idNPC_To, GameCanvas.loadmap.idMap);
             }
         }
+        updateLyMeowzQuestTravel();
         int i = 0;
         while (i < vecDataeff.size()) {
             try {
