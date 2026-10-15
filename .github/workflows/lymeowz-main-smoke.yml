@@ -1,0 +1,46 @@
+name: LyMeowz main Java smoke build
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'sources/GameScreen/GameScreen.java'
+      - 'sources/GameObjects/Player.java'
+      - '.github/workflows/lymeowz-main-smoke.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+      - name: Verify menu and target integration
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          game=Path('sources/GameScreen/GameScreen.java').read_text()
+          player=Path('sources/GameObjects/Player.java').read_text()
+          assert 'public boolean isLyMeowzIntelligenceEnabled()' in game
+          assert 'case 82:' in game and 'toggleLyMeowzIntelligence();' in game
+          assert 'selectLyMeowzLevelTarget()' in player
+          assert 'mob.Lv < this.Lv - 3' in player
+          print('LyMeowz integration static checks: PASS')
+          PY
+      - name: Compile changed game sources against original class resources
+        run: |
+          set -euo pipefail
+          mkdir -p build/smoke
+          javac -encoding UTF-8 -cp resources -d build/smoke \
+            sources/GameScreen/GameScreen.java \
+            sources/GameObjects/Player.java
+      - name: Upload compile output
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lymeowz-smoke-classes
+          path: build/smoke
