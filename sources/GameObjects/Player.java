@@ -646,6 +646,31 @@ public class Player extends MainObject {
         }
     }
 
+    /** Read quest progress from the game's server-updated quest model.
+     * Never manufacture kill packets or mutate counters locally. */
+    private static boolean isLyMeowzQuestMonster(MainObject mob) {
+        if (!(mob instanceof MainMonster)) return false;
+        int category = ((MainMonster) mob).catalogyMonster;
+        for (int group = 0; group < 2; group++) {
+            mVector quests = group == 0 ? MainQuest.vecQuestDoing_Main : MainQuest.vecQuestDoing_Sub;
+            if (quests == null) continue;
+            for (int q = 0; q < quests.size(); q++) {
+                MainQuest quest = (MainQuest) quests.elementAt(q);
+                if (quest == null || quest.isComplete || quest.typeQuest != MainQuest.Q_KILL_MONSTER ||
+                        quest.mIdQuest == null || quest.mQuestGot == null || quest.mtotalQuest == null)
+                    continue;
+                int count = quest.mIdQuest.length;
+                if (quest.mQuestGot.length < count) count = quest.mQuestGot.length;
+                if (quest.mtotalQuest.length < count) count = quest.mtotalQuest.length;
+                for (int k = 0; k < count; k++) {
+                    if (quest.mIdQuest[k] == category && quest.mQuestGot[k] < quest.mtotalQuest[k])
+                        return true;
+                }
+            }
+        }
+        return false;
+    }
+
     /** Prefer normal monsters at own level or 1-3 levels below. */
     private boolean selectLyMeowzLevelTarget() {
         if (GameCanvas.game == null || !GameCanvas.game.isLyMeowzIntelligenceEnabled())
@@ -656,6 +681,7 @@ public class Player extends MainObject {
         MainObject best = null;
         int bestDistance = 2147483647;
         int bestCrowding = 2147483647;
+        boolean bestIsQuest = false;
         int range = (this.wFocus * 3) / 2;
         // A smaller crowd penalty than a full screen prevents chasing distant mobs.
         int crowdPenalty = range / 4;
@@ -663,8 +689,12 @@ public class Player extends MainObject {
             MainObject mob = (MainObject) GameScreen.Vecplayers.elementAt(n);
             if (mob == null || mob.typeObject != 1 || mob.typeBoss != 0 ||
                     mob.typeMonster != 0 || mob.Action == 4 || mob.isDie || mob.isSend ||
-                    mob.hp <= 0 || mob.Lv > this.Lv || mob.Lv < this.Lv - 3)
+                    mob.hp <= 0)
                 continue;
+            boolean questTarget = isLyMeowzQuestMonster(mob);
+            if (!questTarget && (mob.Lv > this.Lv || mob.Lv < this.Lv - 3)) continue;
+            // Quest mobs above the player's level are not safe to engage automatically.
+            if (mob.Lv > this.Lv) continue;
             int distance = MainObject.getDistance(this.x, this.y, mob.x, mob.y);
             if (distance >= range) continue;
             // Prefer quieter visible spots; never switch zones or move automatically here.
@@ -680,11 +710,13 @@ public class Player extends MainObject {
                 }
             }
             if (best == null ||
-                    distance + nearbyPlayers * crowdPenalty < bestDistance + bestCrowding * crowdPenalty ||
-                    (distance + nearbyPlayers * crowdPenalty == bestDistance + bestCrowding * crowdPenalty && distance < bestDistance)) {
+                    (questTarget && !bestIsQuest) ||
+                    (questTarget == bestIsQuest && (distance + nearbyPlayers * crowdPenalty < bestDistance + bestCrowding * crowdPenalty ||
+                    (distance + nearbyPlayers * crowdPenalty == bestDistance + bestCrowding * crowdPenalty && distance < bestDistance))) {
                 best = mob;
                 bestDistance = distance;
                 bestCrowding = nearbyPlayers;
+                bestIsQuest = questTarget;
             }
         }
         if (best != null) {
