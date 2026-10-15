@@ -139,7 +139,11 @@ public class GameScreen extends MainScreen {
     public iCommand cmdSetDoSat = new iCommand(T.dosat, 10, this);
     public iCommand cmdChangeMap = new iCommand(T.changeArea, 12, this);
     public iCommand cmdListFriend = new iCommand(T.listFriend, 15, this);
-    public iCommand cmdLyMeowz = new iCommand("LyMeowz", 150, this);
+    public iCommand cmdLyMeowz = new iCommand("LyMeowz", 80, this);
+    private boolean lyMeowzIntelligenceEnabled;
+    private boolean lyMeowzPreviousAutoHp;
+    private byte lyMeowzPreviousAutoFire;
+    private boolean lyMeowzPreviousCurAutoFire;
     public iCommand cmdAutoFire = new iCommand(T.autoFire, 16, this);
     public iCommand cmdEndHelp = new iCommand(T.endHelp, 17, this);
     public iCommand cmdAutoItem = new iCommand(T.autoItem, 18, this);
@@ -301,10 +305,35 @@ public class GameScreen extends MainScreen {
         GameCanvas.menu2.startAt(mvector, 2, T.chucnang, false, null);
     }
 
-    /** First LyMeowz entry point, using the game's existing native menu UI. */
+    /** One master switch; advanced recovery/navigation remains disabled until integrated. */
+    public void toggleLyMeowzIntelligence() {
+        if (!lyMeowzIntelligenceEnabled) {
+            if (player == null || player.hp <= 0) {
+                GameCanvas.addInfoChar("[LyMeowz] Can nhan vat con song de bat.");
+                return;
+            }
+            lyMeowzPreviousAutoHp = Player.isAutoHPMP;
+            lyMeowzPreviousAutoFire = Player.isAutoFire;
+            lyMeowzPreviousCurAutoFire = Player.isCurAutoFire;
+            Player.isAutoHPMP = true;
+            Player.isAutoFire = (byte) 0;
+            Player.isCurAutoFire = true;
+            lyMeowzIntelligenceEnabled = true;
+            GameCanvas.addInfoChar("[LyMeowz] Da bat tu danh va HP/MP.");
+        } else {
+            Player.isAutoHPMP = lyMeowzPreviousAutoHp;
+            Player.isAutoFire = lyMeowzPreviousAutoFire;
+            Player.isCurAutoFire = lyMeowzPreviousCurAutoFire;
+            lyMeowzIntelligenceEnabled = false;
+            GameCanvas.addInfoChar("[LyMeowz] Da tat che do.");
+        }
+    }
+
     public void openLyMeowzMenu() {
         mVector items = new mVector("LyMeowz menu");
-        items.addElement(new iCommand("Quay lại", 151, this));
+        items.addElement(new iCommand((lyMeowzIntelligenceEnabled ? "Tat " : "Bat ") +
+                "Level up your intelligence", 82, this));
+        items.addElement(new iCommand("Quay lai", 81, this));
         GameCanvas.menu2.startAt(items, 2, "LyMeowz", false, null);
     }
 
@@ -318,11 +347,14 @@ public class GameScreen extends MainScreen {
     public void commandPointer(int i, int i2) {
         MainItem mainItem;
         switch (i) {
-            case 150:
+            case 80:
                 openLyMeowzMenu();
                 break;
-            case 151:
+            case 81:
                 MenuChucNang();
+                break;
+            case 82:
+                toggleLyMeowzIntelligence();
                 break;
             case 0:
                 if (infoGame.isMapThachdau()) {
