@@ -141,6 +141,15 @@ public class GameScreen extends MainScreen {
     public iCommand cmdListFriend = new iCommand(T.listFriend, 15, this);
     public iCommand cmdLyMeowz = new iCommand("LyMeowz", 80, this);
     private boolean lyMeowzIntelligenceEnabled;
+    private boolean lyMeowzAutoSpotEnabled;
+    private int[] lyMeowzChosenSpot;
+    private int lyMeowzSpotIdleTicks;
+    private int lyMeowzSpotWaitTicks;
+    private int lyMeowzSpotCooldownTicks;
+    private boolean lyMeowzSpotAreaRequested;
+    private byte lyMeowzSpotPreviousAutoFire;
+    private boolean lyMeowzSpotPreviousCurAutoFire;
+
     private final LyMeowzAIDirector lyDirector = new LyMeowzAIDirector();
     private final LyMeowzRecovery lyRecovery = new LyMeowzRecovery();
     private final LyMeowzDiagnostics lyDiagnostics = new LyMeowzDiagnostics();
@@ -372,6 +381,9 @@ public class GameScreen extends MainScreen {
         items.addElement(new iCommand("Tu hoi sinh va quay lai bai", 91, this));
         items.addElement(new iCommand("Thong ke luyen tap", 92, this));
         items.addElement(new iCommand("Nhat ky LyMeowz", 93, this));
+        items.addElement(new iCommand("Goi y bai luyen tap", 94, this));
+        items.addElement(new iCommand((lyMeowzAutoSpotEnabled ? "Tat " : "Bat ") +
+                "tu dong doi bai luyen tap", 95, this));
         items.addElement(new iCommand("Quay lai", 81, this));
         GameCanvas.menu2.startAt(items, 2, "LyMeowz", false, null);
     }
@@ -621,6 +633,123 @@ public class GameScreen extends MainScreen {
         }
     }
 
+    private void stopLyMeowzSpotTravel(String reason) {
+        if (lyMeowzChosenSpot != null && player != null) {
+            player.posTransRoad = null;
+            player.countAutoMove = 0;
+            player.xStopMove = 0;
+            player.yStopMove = 0;
+            if (lyMeowzIntelligenceEnabled && player.hp > 0) {
+                Player.isAutoFire = lyMeowzSpotPreviousAutoFire;
+                Player.isCurAutoFire = lyMeowzSpotPreviousCurAutoFire;
+            }
+        }
+        lyMeowzChosenSpot = null;
+        lyMeowzSpotAreaRequested = false;
+        lyMeowzSpotWaitTicks = 0;
+        lyMeowzSpotCooldownTicks = 120;
+        if (reason != null) lyDiagnostics.event(reason);
+    }
+
+    /** Change spots only after sustained idle time and only over learned routes. */
+    private void updateLyMeowzTrainingSpot() {
+        if (!lyMeowzAutoSpotEnabled || !lyMeowzIntelligenceEnabled ||
+                GameCanvas.loadmap == null || player == null ||
+                GameCanvas.gameTick % 30 != 0 ||
+                GameCanvas.currentScreen != GameCanvas.game || !LoadMapScreen.isNextMap)
+            return;
+        if (lyMeowzQuestTravelEnabled || lyRecovery.state() == LyMeowzRecovery.RETURNING ||
+                player.hp <= 0 || player.Action == 4) {
+            if (lyMeowzChosenSpot != null) stopLyMeowzSpotTravel("Doi bai tam dung");
+            return;
+        }
+        int mapId = GameCanvas.loadmap.idMap;
+        int areaId = LoadMap.Area & 255;
+        if (lyMeowzChosenSpot == null) {
+            if (lyMeowzSpotCooldownTicks > 0) {
+                lyMeowzSpotCooldownTicks--;
+                return;
+            }
+            if (GameScreen.ObjFocus != null || player.posTransRoad != null ||
+                    LyMeowzTrainingPlanner.needsRecovery(player.hp,player.maxHp,player.mp,player.maxMp)) {
+                lyMeowzSpotIdleTicks = 0;
+                return;
+            }
+            if (++lyMeowzSpotIdleTicks < 25) return;
+            lyMeowzSpotIdleTicks = 0;
+            int category = Player.lyMeowzNextQuestMonsterCategory();
+            int[] spot = LyMeowzTrainingSpotRegistry.best(player.Lv, category, mapId, areaId);
+            if (spot == null) {
+                lyMeowzSpotCooldownTicks = 120;
+                return;
+            }
+            if ((spot[0] != mapId || spot[1] != areaId) &&
+                    spot[0] != mapId &&
+                    LyMeowzMapTransitions.nextGate(mapId, areaId, spot[0], spot[1]) == null) {
+                lyMeowzSpotCooldownTicks = 120;
+                lyDiagnostics.event("Chua hoc duong den bai quai");
+                return;
+            }
+            lyMeowzChosenSpot = spot;
+            lyMeowzSpotPreviousAutoFire = Player.isAutoFire;
+            lyMeowzSpotPreviousCurAutoFire = Player.isCurAutoFire;
+            Player.isAutoFire = (byte) 0;
+            Player.isCurAutoFire = false;
+            lyMeowzSpotWaitTicks = 0;
+            lyDiagnostics.event("Doi bai: map " + spot[0] + "/khu " + spot[1] +
+                    " quai " + spot[4]);
+        }
+        if (player.posTransRoad != null) return;
+        int[] target = lyMeowzChosenSpot;
+        if (mapId == target[0] && areaId == target[1]) {
+            lyMeowzSpotAreaRequested = false;
+            if (MainObject.getDistance(player.x, player.y, target[2], target[3]) <= 110) {
+                stopLyMeowzSpotTravel("Da den bai quai da hoc");
+                return;
+            }
+            if (!lyMeowzQuestMoveTo(target[2], target[3], true))
+                stopLyMeowzSpotTravel("Bai quai khong the di toi");
+            return;
+        }
+        if (mapId == target[0]) {
+            if (target[1] < 0 || target[1] >= (LoadMap.MaxArea & 255)) {
+                stopLyMeowzSpotTravel("Khu bai quai khong hop le");
+            } else if (!lyMeowzSpotAreaRequested) {
+                lyMeowzSpotAreaRequested = true;
+                lyMeowzSpotWaitTicks = 0;
+                GlobalService.gI().Change_Area((byte) target[1]);
+            } else if (++lyMeowzSpotWaitTicks > 35) {
+                stopLyMeowzSpotTravel("Doi khu bai quai that bai");
+            }
+            return;
+        }
+        int[] hop = LyMeowzMapTransitions.nextGate(mapId, areaId, target[0], target[1]);
+        if (hop == null) {
+            stopLyMeowzSpotTravel("Mat tuyen cong den bai quai");
+            return;
+        }
+        Model.Point gate = null;
+        int best = (LoadMap.wTile * 3) * (LoadMap.wTile * 3);
+        for (int i = 0; i < LoadMap.vecPointChange.size(); i++) {
+            Model.Point candidate = (Model.Point) LoadMap.vecPointChange.elementAt(i);
+            int dx = candidate.x - hop[0], dy = candidate.y - hop[1];
+            int dist = dx * dx + dy * dy;
+            if (dist < best) { best = dist; gate = candidate; }
+        }
+        if (gate == null) {
+            stopLyMeowzSpotTravel("Khong con cong den bai quai");
+            return;
+        }
+        if (MainObject.getDistance(player.x, player.y, gate.x, gate.y) <= 16) {
+            if (++lyMeowzSpotWaitTicks > 50)
+                stopLyMeowzSpotTravel("Cong den bai quai khong chuyen map");
+            return;
+        }
+        lyMeowzSpotWaitTicks = 0;
+        if (!lyMeowzQuestMoveTo(gate.x, gate.y, false))
+            stopLyMeowzSpotTravel("Khong tim duoc duong den cong");
+    }
+
     private void updateLyMeowzQuestTravel() {
         if (!lyMeowzQuestTravelEnabled || GameCanvas.loadmap == null || player == null ||
                 !LoadMapScreen.isNextMap || GameCanvas.currentScreen != GameCanvas.game ||
@@ -771,6 +900,25 @@ public class GameScreen extends MainScreen {
                 break;
             case 87:
                 toggleLyMeowzQuestTravel();
+                openLyMeowzMenu();
+                break;
+            case 94:
+                int questMobCategory = Player.lyMeowzNextQuestMonsterCategory();
+                int[] suggestion = LyMeowzTrainingSpotRegistry.best(
+                        player.Lv, questMobCategory, GameCanvas.loadmap.idMap, LoadMap.Area & 255);
+                if (suggestion == null)
+                    GameCanvas.addInfoChar("LyMeowz: Chua quan sat bai quai dung cap.");
+                else
+                    GameCanvas.addInfoChar("LyMeowz: Goi y map " + suggestion[0] +
+                            " khu " + suggestion[1] + ", quai " + suggestion[4] +
+                            " cap " + suggestion[5] + ", dong " + suggestion[6] + ".");
+                openLyMeowzMenu();
+                break;
+            case 95:
+                lyMeowzAutoSpotEnabled = !lyMeowzAutoSpotEnabled;
+                if (!lyMeowzAutoSpotEnabled) stopLyMeowzSpotTravel("Da tat tu dong doi bai");
+                GameCanvas.addInfoChar("LyMeowz: Tu doi bai " +
+                        (lyMeowzAutoSpotEnabled ? "BAT" : "TAT"));
                 openLyMeowzMenu();
                 break;
             case 90:
@@ -1468,6 +1616,26 @@ public class GameScreen extends MainScreen {
             if (GameCanvas.gameTick % 120 == 0) LyMeowzWorldStore.flushIfDirty();
         }
         if (GameCanvas.loadmap != null && GameCanvas.gameTick % 30 == 0) {
+            // Observe level-matched training spots and competing players.
+            for (int ly = 0; ly < Vecplayers.size(); ly++) {
+                MainObject mobObject = (MainObject) Vecplayers.elementAt(ly);
+                if (!(mobObject instanceof GameObjects.MainMonster) ||
+                        mobObject.Action == 4 || mobObject.hp <= 0 ||
+                        mobObject.typeBoss != 0) continue;
+                int crowd = 0;
+                for (int other = 0; other < Vecplayers.size(); other++) {
+                    MainObject nearby = (MainObject) Vecplayers.elementAt(other);
+                    if (nearby != null && nearby != player && nearby.typeObject == 0 &&
+                            MainObject.getDistance(nearby.x, nearby.y,
+                                    mobObject.x, mobObject.y) < 160) crowd++;
+                }
+                LyMeowzTrainingSpotRegistry.observe(
+                        ((GameObjects.MainMonster) mobObject).catalogyMonster,
+                        mobObject.Lv, GameCanvas.loadmap.idMap, LoadMap.Area & 255,
+                        mobObject.x, mobObject.y, crowd);
+            }
+        }
+        if (GameCanvas.loadmap != null && GameCanvas.gameTick % 30 == 0) {
             // Learn every actually loaded NPC, not only quest givers who already
             // have finished quests. This allows future turn-in route lookup.
             for (int ly = 0; ly < Vecplayers.size(); ly++) {
@@ -1479,6 +1647,7 @@ public class GameScreen extends MainScreen {
         }
         updateLyMeowzDirectorAndRecovery();
         updateLyMeowzQuestTravel();
+        updateLyMeowzTrainingSpot();
         int i = 0;
         while (i < vecDataeff.size()) {
             try {
