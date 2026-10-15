@@ -1475,12 +1475,12 @@ public class GameScreen extends MainScreen {
         for (int i10 = 0; i10 < GameCanvas.loadmap.mapFind.length; i10++) {
             for (int i11 = 0; i11 < GameCanvas.loadmap.mapFind[i10].length; i11++) {
                 int i12 = ((this.yStart + i11) * GameCanvas.loadmap.mapW) + this.xStart + i10;
-                if (i12 >= 0 && i12 < GameCanvas.loadmap.mapType.length) {
-                    if (GameCanvas.loadmap.mapType[i12] == 1 || GameCanvas.loadmap.mapType[i12] == -1) {
-                        GameCanvas.loadmap.mapFind[i10][i11] = -1;
-                    } else {
-                        GameCanvas.loadmap.mapFind[i10][i11] = 0;
-                    }
+                if (i12 < 0 || i12 >= GameCanvas.loadmap.mapType.length ||
+                        GameCanvas.loadmap.mapType[i12] == 1 || GameCanvas.loadmap.mapType[i12] == -1) {
+                    // Unloaded tiles must never be treated as walkable.
+                    GameCanvas.loadmap.mapFind[i10][i11] = -1;
+                } else {
+                    GameCanvas.loadmap.mapFind[i10][i11] = 0;
                 }
             }
         }
@@ -1488,6 +1488,10 @@ public class GameScreen extends MainScreen {
         int i14 = i7;
         short s = (short) i13;
         short s2 = (short) i14;
+        if (GameCanvas.loadmap.mapFind[i13][i14] == -1 ||
+                GameCanvas.loadmap.mapFind[i8][i9] == -1) {
+            return new short[i5 + 1];
+        }
         GameCanvas.loadmap.mapFind[i13][i14] = 1;
         int i15 = 2;
         int length = GameCanvas.loadmap.mapFind.length;
@@ -1495,7 +1499,7 @@ public class GameScreen extends MainScreen {
         int i16 = 0;
         do {
             i16++;
-            if (i16 > 1000) {
+            if (i16 > 1000 || i15 >= 127) {
                 return new short[i5 + 1];
             }
             int i17 = -1;
@@ -1559,15 +1563,13 @@ public class GameScreen extends MainScreen {
                 short s5 = 0;
                 while (s5 < length2) {
                     short s6 = s5;
-                    {
-                        if (GameCanvas.loadmap.mapFind[s4][s6] > 1 && setContinue(s4, s6, GameCanvas.loadmap.mapFind) && GameCanvas.loadmap.mapFind[s4][s6] + CRes.setDis(s4, s6, i8, i9) < i15 + CRes.setDis(i13, i14, i8, i9)) {
-                            i13 = s4;
-                            i14 = s6;
-                            i15 = GameCanvas.loadmap.mapFind[s4][s6];
-                            z = false;
-                        }
-                        s5 = (short) (s6 + 1);
+                    if (GameCanvas.loadmap.mapFind[s4][s6] > 1 && setContinue(s4, s6, GameCanvas.loadmap.mapFind) && GameCanvas.loadmap.mapFind[s4][s6] + CRes.setDis(s4, s6, i8, i9) < i15 + CRes.setDis(i13, i14, i8, i9)) {
+                        i13 = s4;
+                        i14 = s6;
+                        i15 = GameCanvas.loadmap.mapFind[s4][s6];
+                        z = false;
                     }
+                    s5 = (short) (s6 + 1);
                 }
                 s3 = (short) (s4 + 1);
             }
