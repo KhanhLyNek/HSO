@@ -694,6 +694,11 @@ public class Player extends MainObject {
         return remaining;
     }
 
+    /** True if an accepted kill quest still has an unfinished objective. */
+    private static boolean lyMeowzHasActiveKillQuest() {
+        return lyMeowzQuestKillsRemaining() > 0;
+    }
+
     /** Prefer normal monsters at own level or 1-3 levels below. */
     private boolean selectLyMeowzLevelTarget() {
         if (GameCanvas.game == null || !GameCanvas.game.isLyMeowzIntelligenceEnabled())
@@ -705,6 +710,7 @@ public class Player extends MainObject {
         int bestDistance = 2147483647;
         int bestCrowding = 2147483647;
         boolean bestIsQuest = false;
+        boolean hasQuest = lyMeowzHasActiveKillQuest();
         int range = (this.wFocus * 3) / 2;
         // A smaller crowd penalty than a full screen prevents chasing distant mobs.
         int crowdPenalty = range / 4;
@@ -715,6 +721,8 @@ public class Player extends MainObject {
                     mob.hp <= 0)
                 continue;
             boolean questTarget = isLyMeowzQuestMonster(mob);
+            // When quest objectives are pending, do not waste attacks on unrelated mobs.
+            if (hasQuest && !questTarget) continue;
             if (!questTarget && (mob.Lv > this.Lv || mob.Lv < this.Lv - 3)) continue;
             // Quest mobs above the player's level are not safe to engage automatically.
             if (mob.Lv > this.Lv) continue;
