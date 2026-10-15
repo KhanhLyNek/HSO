@@ -650,6 +650,9 @@ public class Player extends MainObject {
     private boolean selectLyMeowzLevelTarget() {
         if (GameCanvas.game == null || !GameCanvas.game.isLyMeowzIntelligenceEnabled())
             return false;
+        // Respect the native auto-combat cancellation and never retarget while dead.
+        if (!isCurAutoFire || isAutoFire < 0 || this.hp <= 0 || this.Action == 4)
+            return true;
         MainObject best = null;
         int bestDistance = 2147483647;
         int range = (this.wFocus * 3) / 2;
