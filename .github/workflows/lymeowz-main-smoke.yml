@@ -5,6 +5,8 @@ on:
     paths:
       - 'sources/GameScreen/GameScreen.java'
       - 'sources/GameObjects/Player.java'
+      - 'sources/GameObjects/MainObject.java'
+      - 'sources/GameObjects/MountTemplate.java'
       - 'sources/GameObjects/NPC.java'
       - 'sources/GameScreen/LyMeowzMapReader.java'
       - 'sources/GameScreen/LyMeowzNpcMapRegistry.java'
@@ -81,6 +83,8 @@ jobs:
           javac -encoding UTF-8 -cp resources:build/smoke-stubs -d build/smoke \
             sources/GameScreen/GameScreen.java \
             sources/GameObjects/Player.java \
+            sources/GameObjects/MainObject.java \
+            sources/GameObjects/MountTemplate.java \
             sources/GameObjects/NPC.java \
             sources/GameScreen/LyMeowzMapReader.java \
             sources/GameScreen/LyMeowzNpcMapRegistry.java \
