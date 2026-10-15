@@ -468,8 +468,9 @@ public class ReadMessenge extends AvMain {
     }
 
     public void objectMove(Message message) {
-        while (message.reader().available() > 0) {
+        while (true) {
             try {
+                if (message.reader().available() <= 0) return;
                 byte readByte = message.reader().readByte();
                 short readShort = message.reader().readShort();
                 short readShort2 = message.reader().readShort();
@@ -4694,20 +4695,13 @@ public class ReadMessenge extends AvMain {
                         }
                     }
                     if (GameCanvas.currentScreen == List_Server.gI() && List_Server.gI().typeList == 4) {
-                        int i2 = 0;
-                        while (true) {
-                            if (i2 < List_Server.gI().vecListServer.size()) {
-                                MainObject mainObject2 = (MainObject) List_Server.gI().vecListServer.elementAt(i2);
-                                if (mainObject2.name.compareTo(readUTF6) != 0) {
-                                    i2++;
-                                } else if (mainObject2.myClan != null) {
-                                    if (readInt3 == -1) {
-                                        mainObject2.myClan.chucvu = (byte) 121;
-                                    } else {
-                                        mainObject2.myClan.chucvu = b;
-                                    }
-                                }
+                        for (int i2 = 0; i2 < List_Server.gI().vecListServer.size(); i2++) {
+                            MainObject mainObject2 = (MainObject) List_Server.gI().vecListServer.elementAt(i2);
+                            if (mainObject2.name.compareTo(readUTF6) != 0) continue;
+                            if (mainObject2.myClan != null) {
+                                mainObject2.myClan.chucvu = readInt3 == -1 ? (byte) 121 : b;
                             }
+                            break;
                         }
                         break;
                     }
