@@ -318,14 +318,14 @@ public class MainObject extends AvMain {
     public static byte[][] mTypePartPaintPlayer = {new byte[]{6, 0, 1, 2, 5, 4, 3, 6}, new byte[]{6, 0, 1, 2, 5, 4, 3, 6}, new byte[]{6, 0, 1, 2, 5, 4, 3, 6}, new byte[]{6, 0, 1, 2, 5, 4, 3, 6}};
     public static mHashtable ALL_EFF_MAT_NA = new mHashtable();
     public static byte[] horseMove = {2, 2, 2, 3, 3, 4, 4, 4};
-    public static WeaponInfo[][][] imgWeapone = new WeaponInfo[4];
+    public static WeaponInfo[][][] imgWeapone = new WeaponInfo[4][][];
 
     /* JADX WARN: Multi-variable type inference failed */
     /* JADX WARN: Type inference failed for: r0v11, types: [byte[], byte[][]] */
     /* JADX WARN: Type inference failed for: r0v16, types: [GameObjects.WeaponInfo[][], GameObjects.WeaponInfo[][][]] */
     static {
         for (int i = 0; i < imgWeapone.length; i++) {
-            imgWeapone[i] = new WeaponInfo[40];
+            imgWeapone[i] = new WeaponInfo[40][];
             for (int i2 = 0; i2 < imgWeapone[i].length; i2++) {
                 imgWeapone[i][i2] = new WeaponInfo[8];
             }
@@ -458,7 +458,7 @@ public class MainObject extends AvMain {
         this.xMount = 0;
         this.yMount = 0;
         this.typeMount = (byte) -1;
-        this.arrayGemKham = new short[12];
+        this.arrayGemKham = new short[12][];
         this.slotGem = new byte[]{-1, -1, -1};
         this.timeEff = 0;
         this.dxEff = 0;
@@ -593,7 +593,7 @@ public class MainObject extends AvMain {
         this.xMount = 0;
         this.yMount = 0;
         this.typeMount = (byte) -1;
-        this.arrayGemKham = new short[12];
+        this.arrayGemKham = new short[12][];
         this.slotGem = new byte[]{-1, -1, -1};
         this.timeEff = 0;
         this.dxEff = 0;
