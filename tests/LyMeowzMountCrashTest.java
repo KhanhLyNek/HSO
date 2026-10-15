@@ -59,7 +59,19 @@ public final class LyMeowzMountCrashTest {
         check(MountTemplate.hasAnimationData(1), "complete animation rows accepted");
         check(MountTemplate.canFly(1), "flight metadata restored");
         check(MountTemplate.safeSpeed(1) == 3, "server speed restored");
+        // Simulate data arriving AFTER a previous update skipped the mount.
+        // It should recover automatically without resetting the mount ID.
+        remotePlayer.typeMount = (byte) 1;
+        remotePlayer.Action = 0;
+        remotePlayer.Direction = 2;
+        remotePlayer.frame = 1;
+        remotePlayer.updateMount();
+        check(remotePlayer.typeMount == 1 && remotePlayer.frameMount == 1,
+                "mount animation resumes when server data becomes complete");
         MountTemplate.dx[1] = null;
+        remotePlayer.updateMount();
+        check(remotePlayer.frameMount == (byte) -1,
+                "disappearing or partially loaded animation is safely skipped");
         check(!MountTemplate.hasAnimationData(1), "missing inner row safely rejected");
         MountTemplate.dx[1] = new byte[2];
         check(!MountTemplate.hasAnimationData(1), "short row safely rejected");
