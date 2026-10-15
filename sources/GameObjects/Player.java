@@ -694,6 +694,29 @@ public class Player extends MainObject {
         return remaining;
     }
 
+    /** Number of remaining kills for a particular monster template. */
+    public static int lyMeowzRemainingForMonster(int category) {
+        int remaining = 0;
+        for (int group = 0; group < 2; group++) {
+            mVector quests = group == 0 ? MainQuest.vecQuestDoing_Main : MainQuest.vecQuestDoing_Sub;
+            if (quests == null) continue;
+            for (int q = 0; q < quests.size(); q++) {
+                MainQuest quest = (MainQuest) quests.elementAt(q);
+                if (quest == null || quest.isComplete || quest.typeQuest != MainQuest.Q_KILL_MONSTER ||
+                        quest.mIdQuest == null || quest.mQuestGot == null || quest.mtotalQuest == null)
+                    continue;
+                int count = quest.mIdQuest.length;
+                if (quest.mQuestGot.length < count) count = quest.mQuestGot.length;
+                if (quest.mtotalQuest.length < count) count = quest.mtotalQuest.length;
+                for (int k = 0; k < count; k++) {
+                    if (quest.mIdQuest[k] == category && quest.mQuestGot[k] < quest.mtotalQuest[k])
+                        remaining += quest.mtotalQuest[k] - quest.mQuestGot[k];
+                }
+            }
+        }
+        return remaining;
+    }
+
     /** True if an accepted kill quest still has an unfinished objective. */
     private static boolean lyMeowzHasActiveKillQuest() {
         return lyMeowzQuestKillsRemaining() > 0;
