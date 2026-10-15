@@ -320,8 +320,10 @@ public class GameScreen extends MainScreen {
             lyMeowzPreviousAutoFire = Player.isAutoFire;
             lyMeowzPreviousCurAutoFire = Player.isCurAutoFire;
             Player.isAutoHPMP = true;
-            Player.isAutoFire = (byte) 0;
+            Player.xBeginAutoFire = player.x;
+            Player.yBeginAutofire = player.y;
             Player.isCurAutoFire = true;
+            Player.isAutoFire = (byte) 1;
             lyMeowzIntelligenceEnabled = true;
             GameCanvas.addInfoChar("[LyMeowz] Da bat tu danh va HP/MP.");
         } else {
