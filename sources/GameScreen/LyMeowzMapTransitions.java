@@ -28,7 +28,7 @@ public final class LyMeowzMapTransitions {
         size++;
     }
 
-    /** Next gate toward destination, or null if no observed route exists. */
+    /** Returns {gatePixelX, gatePixelY, immediateNextMapId}, or null if no observed route exists. */
     public static synchronized int[] nextGate(int source, int destination) {
         if (source < 0 || destination < 0 || source == destination) return null;
         int[] queue = new int[CAPACITY + 1];
@@ -49,7 +49,7 @@ public final class LyMeowzMapTransitions {
                 }
                 if (seen || tail >= queue.length) continue;
                 int first = firstEdge[head] < 0 ? e : firstEdge[head];
-                if (next == destination) return new int[] {x[first], y[first], next, to[first]};
+                if (next == destination) return new int[] {x[first], y[first], to[first]};
                 visited[tail] = next;
                 queue[tail] = next;
                 firstEdge[tail] = first;
