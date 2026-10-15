@@ -9,7 +9,7 @@ public final class LyMeowzNavigationTest {
         if (!valid) throw new AssertionError(message);
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         check(LyMeowzNpcMapRegistry.findMap(420) == -1, "unknown NPC");
         LyMeowzNpcMapRegistry.remember(420, 20);
         check(LyMeowzNpcMapRegistry.findMap(420) == 20, "remember NPC map");
