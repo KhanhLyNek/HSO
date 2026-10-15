@@ -442,7 +442,11 @@ public class GameScreen extends MainScreen {
                             GameCanvas.addInfoChar("LyMeowz: Da danh dau NPC. Den gan NPC roi bam lai de tuong tac.");
                         }
                     } else {
-                        GameCanvas.addInfoChar("LyMeowz: NPC tra nhiem vu khong o map hien tai (ID " + questNpcId + ").");
+                        int knownMap = LyMeowzNpcMapRegistry.findMap(questNpcId);
+                        if (knownMap >= 0)
+                            GameCanvas.addInfoChar("LyMeowz: NPC " + questNpcId + " tung thay o map " + knownMap + ".");
+                        else
+                            GameCanvas.addInfoChar("LyMeowz: Chua biet map cua NPC " + questNpcId + ".");
                     }
                 }
                 openLyMeowzMenu();
@@ -979,6 +983,13 @@ public class GameScreen extends MainScreen {
 
     @Override // GameScreen.MainScreen, Model.AvMain
     public void update() {
+        if (GameCanvas.loadmap != null) {
+            for (int ly = 0; ly < GameObjects.MainQuest.vecQuestFinish.size(); ly++) {
+                GameObjects.MainQuest lyQuest = (GameObjects.MainQuest) GameObjects.MainQuest.vecQuestFinish.elementAt(ly);
+                if (lyQuest != null && MainObject.get_Object(lyQuest.idNPC_To, (byte) 2) != null)
+                    LyMeowzNpcMapRegistry.remember(lyQuest.idNPC_To, GameCanvas.loadmap.idMap);
+            }
+        }
         int i = 0;
         while (i < vecDataeff.size()) {
             try {
