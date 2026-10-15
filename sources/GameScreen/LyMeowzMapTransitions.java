@@ -133,6 +133,12 @@ public final class LyMeowzMapTransitions {
         return hop == null ? null : new int[] {hop[0], hop[1], hop[2]};
     }
 
+    public static synchronized void clear() {
+        size = 0;
+        disarm();
+        revision++;
+    }
+
     public static synchronized int revision() { return revision; }
     public static synchronized int size() { return size; }
 
