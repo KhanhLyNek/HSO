@@ -5,6 +5,7 @@ on:
     paths:
       - 'sources/GameScreen/GameScreen.java'
       - 'sources/GameObjects/Player.java'
+      - 'sources/GameScreen/LyMeowzMapReader.java'
       - '.github/workflows/lymeowz-main-smoke.yml'
   workflow_dispatch:
 permissions:
@@ -45,9 +46,30 @@ jobs:
           mkdir -p build/smoke
           javac -encoding UTF-8 -cp resources -d build/smoke \
             sources/GameScreen/GameScreen.java \
-            sources/GameObjects/Player.java 2>&1 | tee build/smoke-compile.log
+            sources/GameObjects/Player.java \
+            sources/GameScreen/LyMeowzMapReader.java 2>&1 | tee build/smoke-compile.log
           test -f build/smoke/GameScreen/GameScreen.class
           test -f build/smoke/GameObjects/Player.class
+          test -f build/smoke/GameScreen/LyMeowzMapReader.class
+      - name: Test obstacle routing and unreachable goals
+        run: |
+          cat > /tmp/TestLyMeowzMap.java <<'EOF'
+          import GameScreen.LyMeowzMapReader;
+          public class TestLyMeowzMap {
+            public static void main(String[] args) {
+              int[] map = {0,1,0, 0,1,0, 0,0,0};
+              short[] path = LyMeowzMapReader.route(map,3,3,0,0,2,0,20);
+              if (path.length != 6) throw new AssertionError("detour length="+path.length);
+              if (path[path.length-1] != (short)(2 << 8)) throw new AssertionError("goal");
+              if (LyMeowzMapReader.route(map,3,3,0,0,2,0,4).length != 0) throw new AssertionError("limit");
+              if (LyMeowzMapReader.route(map,3,3,0,0,1,0,20).length != 0) throw new AssertionError("wall");
+              if (LyMeowzMapReader.route(map,3,3,-1,0,2,0,20).length != 0) throw new AssertionError("bounds");
+              System.out.println("LyMeowz route tests: PASS");
+            }
+          }
+          EOF
+          javac -cp build/smoke -d /tmp /tmp/TestLyMeowzMap.java
+          java -cp /tmp:build/smoke TestLyMeowzMap
       - name: Upload compile output
         if: always()
         uses: actions/upload-artifact@v4
