@@ -340,6 +340,7 @@ public class GameScreen extends MainScreen {
         items.addElement(new iCommand((lyMeowzIntelligenceEnabled ? "Tat " : "Bat ") +
                 "Level up your intelligence", 82, this));
         items.addElement(new iCommand("Tien do nhiem vu diet quai", 83, this));
+        items.addElement(new iCommand("Tim NPC tra nhiem vu", 84, this));
         items.addElement(new iCommand("Quay lai", 81, this));
         GameCanvas.menu2.startAt(items, 2, "LyMeowz", false, null);
     }
@@ -366,6 +367,29 @@ public class GameScreen extends MainScreen {
             case 83:
                 int remaining = Player.lyMeowzQuestKillsRemaining();
                 GameCanvas.addInfoChar("LyMeowz - Con " + remaining + " quai can diet cho nhiem vu.");
+                openLyMeowzMenu();
+                break;
+            case 84:
+                int questNpcId = -1;
+                for (int q = 0; q < GameObjects.MainQuest.vecQuestFinish.size(); q++) {
+                    GameObjects.MainQuest quest = (GameObjects.MainQuest) GameObjects.MainQuest.vecQuestFinish.elementAt(q);
+                    if (quest != null) {
+                        questNpcId = quest.idNPC_To;
+                        break;
+                    }
+                }
+                if (questNpcId < 0) {
+                    GameCanvas.addInfoChar("LyMeowz: Chua co nhiem vu san sang tra.");
+                } else {
+                    MainObject npc = MainObject.get_Object(questNpcId, (byte) 2);
+                    if (npc != null) {
+                        ObjFocus = npc;
+                        PaintInfoGameScreen.isPaintInfoFocus = true;
+                        GameCanvas.addInfoChar("LyMeowz: Da danh dau NPC tra nhiem vu. Hay den gan va tuong tac.");
+                    } else {
+                        GameCanvas.addInfoChar("LyMeowz: NPC tra nhiem vu khong o map hien tai (ID " + questNpcId + ").");
+                    }
+                }
                 openLyMeowzMenu();
                 break;
             case 0:
