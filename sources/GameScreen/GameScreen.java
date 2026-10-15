@@ -1529,7 +1529,7 @@ public class GameScreen extends MainScreen {
                     i18 = i14 - 1;
                 }
             }
-            boolean z = -1;
+            boolean z = true;
             if (i17 != -1) {
                 z = false;
                 i13 = i17;
