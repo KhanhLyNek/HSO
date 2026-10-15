@@ -144,6 +144,7 @@ public class GameScreen extends MainScreen {
     private boolean lyMeowzQuestTravelEnabled;
     private int lyMeowzQuestTravelNpcId = -1;
     private int lyMeowzQuestTravelMap = -1;
+    private int lyMeowzQuestTravelArea = -1;
     private int lyMeowzQuestTravelWaitTicks;
     private int lyMeowzQuestTravelNpcWaitTicks;
     private int lyMeowzQuestTravelStallTicks;
@@ -359,6 +360,7 @@ public class GameScreen extends MainScreen {
         items.addElement(new iCommand((lyMeowzQuestTravelEnabled ? "Dung" : "Bat") +
                 " tu dong tim NPC qua map", 87, this));
         items.addElement(new iCommand("Kiem tra tuyen NPC da hoc", 88, this));
+        items.addElement(new iCommand("Luu ban do LyMeowz", 89, this));
         items.addElement(new iCommand("Quay lai", 81, this));
         GameCanvas.menu2.startAt(items, 2, "LyMeowz", false, null);
     }
@@ -387,6 +389,7 @@ public class GameScreen extends MainScreen {
         }
         lyMeowzQuestTravelNpcId = npcId;
         lyMeowzQuestTravelMap = GameCanvas.loadmap.idMap;
+        lyMeowzQuestTravelArea = LoadMap.Area & 255;
         lyMeowzQuestTravelWaitTicks = 0;
         lyMeowzQuestTravelNpcWaitTicks = 0;
         lyMeowzQuestTravelStallTicks = 0;
@@ -498,8 +501,10 @@ public class GameScreen extends MainScreen {
             return;
         }
         int mapId = GameCanvas.loadmap.idMap;
-        if (lyMeowzQuestTravelMap != mapId) {
+        int areaId = LoadMap.Area & 255;
+        if (lyMeowzQuestTravelMap != mapId || lyMeowzQuestTravelArea != areaId) {
             lyMeowzQuestTravelMap = mapId;
+            lyMeowzQuestTravelArea = areaId;
             lyMeowzQuestTravelWaitTicks = 0;
             lyMeowzQuestTravelNpcWaitTicks = 0;
             lyMeowzQuestTravelWaitingForMap = false;
@@ -524,7 +529,7 @@ public class GameScreen extends MainScreen {
         lyMeowzQuestTravelOwnsPath = false;
         MainObject npc = MainObject.get_Object(lyMeowzQuestTravelNpcId, (byte) 2);
         if (npc instanceof GameObjects.NPC) {
-            LyMeowzNpcMapRegistry.remember(lyMeowzQuestTravelNpcId, mapId);
+            LyMeowzNpcMapRegistry.remember(lyMeowzQuestTravelNpcId, mapId, areaId);
             if (MainObject.getDistance(player.x, player.y, npc.x, npc.y) <= 90) {
                 stopLyMeowzQuestTravel(null);
                 ((GameObjects.NPC) npc).NhiemVu();
@@ -535,7 +540,8 @@ public class GameScreen extends MainScreen {
             return;
         }
         int destMap = LyMeowzNpcMapRegistry.findMap(lyMeowzQuestTravelNpcId);
-        if (destMap == mapId) {
+        int destArea = LyMeowzNpcMapRegistry.findArea(lyMeowzQuestTravelNpcId);
+        if (destMap == mapId && destArea == areaId) {
             // NPCs may stream in after the map-change packet; allow time to spawn.
             if (++lyMeowzQuestTravelNpcWaitTicks > 30)
                 stopLyMeowzQuestTravel("LyMeowz: NPC chua duoc tai tren map dich.");
@@ -545,7 +551,7 @@ public class GameScreen extends MainScreen {
             stopLyMeowzQuestTravel("LyMeowz: Chua biet map cua NPC, can quan sat NPC truoc.");
             return;
         }
-        int[] next = LyMeowzMapTransitions.nextGate(mapId, destMap);
+        int[] next = LyMeowzMapTransitions.nextGate(mapId, areaId, destMap, destArea);
         if (next == null) {
             stopLyMeowzQuestTravel("LyMeowz: Chua hoc tuyen cong den map " + destMap + ".");
             return;
@@ -609,6 +615,12 @@ public class GameScreen extends MainScreen {
                 toggleLyMeowzQuestTravel();
                 openLyMeowzMenu();
                 break;
+            case 89:
+                boolean savedWorld = LyMeowzWorldStore.flushIfDirty();
+                GameCanvas.addInfoChar(savedWorld ? "LyMeowz: Da luu ban do da hoc." :
+                        "LyMeowz: Khong co thay doi hoac khong luu duoc RMS.");
+                openLyMeowzMenu();
+                break;
             case 88:
                 int statusNpc = -1;
                 for (int q = 0; q < GameObjects.MainQuest.vecQuestFinish.size(); q++) {
@@ -621,15 +633,18 @@ public class GameScreen extends MainScreen {
                     int statusMap = LyMeowzNpcMapRegistry.findMap(statusNpc);
                     if (statusMap < 0) {
                         GameCanvas.addInfoChar("LyMeowz: NPC " + statusNpc + " chua co map da hoc.");
-                    } else if (GameCanvas.loadmap.idMap == statusMap) {
+                    } else if (GameCanvas.loadmap.idMap == statusMap &&
+                            (LoadMap.Area & 255) == LyMeowzNpcMapRegistry.findArea(statusNpc)) {
                         GameCanvas.addInfoChar("LyMeowz: NPC " + statusNpc + " o map hien tai " + statusMap + ".");
                     } else {
-                        int[] statusGate = LyMeowzMapTransitions.nextGate(GameCanvas.loadmap.idMap, statusMap);
+                        int[] statusGate = LyMeowzMapTransitions.nextGate(GameCanvas.loadmap.idMap,
+                                LoadMap.Area & 255, statusMap,
+                                LyMeowzNpcMapRegistry.findArea(statusNpc));
                         if (statusGate == null)
                             GameCanvas.addInfoChar("LyMeowz: Biet map " + statusMap + " nhung chua hoc du cong.");
                         else
                             GameCanvas.addInfoChar("LyMeowz: Map dich " + statusMap + ", cong " +
-                                    statusGate[0] + "," + statusGate[1] + " sang map " + statusGate[2] + ".");
+                                    statusGate[0] + "," + statusGate[1] + " sang map " + statusGate[2] + "/khu " + statusGate[3] + ".");
                     }
                 }
                 openLyMeowzMenu();
@@ -710,7 +725,9 @@ public class GameScreen extends MainScreen {
                     } else {
                         int knownMap = LyMeowzNpcMapRegistry.findMap(questNpcId);
                         if (knownMap >= 0) {
-                            int[] gate = LyMeowzMapTransitions.nextGate(GameCanvas.loadmap.idMap, knownMap);
+                            int[] gate = LyMeowzMapTransitions.nextGate(GameCanvas.loadmap.idMap,
+                                    LoadMap.Area & 255, knownMap,
+                                    LyMeowzNpcMapRegistry.findArea(questNpcId));
                             if (gate != null)
                                 GameCanvas.addInfoChar("LyMeowz: Cong tiep theo den map " + knownMap + " tai " + gate[0] + "," + gate[1] + ".");
                             else
@@ -1254,11 +1271,28 @@ public class GameScreen extends MainScreen {
 
     @Override // GameScreen.MainScreen, Model.AvMain
     public void update() {
+        if (GameCanvas.loadmap != null && player != null) {
+            LyMeowzWorldStore.ensureLoaded(player.name);
+            if (GameCanvas.gameTick % 4 == 0 && player.hp > 0 &&
+                    GameCanvas.currentScreen == GameCanvas.game && LoadMapScreen.isNextMap &&
+                    (player.vx != 0 || player.vy != 0 || player.posTransRoad != null ||
+                     player.toX != player.x || player.toY != player.y)) {
+                for (int ly = 0; ly < LoadMap.vecPointChange.size(); ly++) {
+                    Model.Point gate = (Model.Point) LoadMap.vecPointChange.elementAt(ly);
+                    if (MainObject.getDistance(player.x, player.y, gate.x, gate.y) <= 36) {
+                        LyMeowzMapTransitions.armGate(GameCanvas.loadmap.idMap,
+                                LoadMap.Area & 255, gate.x, gate.y, System.currentTimeMillis());
+                        break;
+                    }
+                }
+            }
+            if (GameCanvas.gameTick % 120 == 0) LyMeowzWorldStore.flushIfDirty();
+        }
         if (GameCanvas.loadmap != null) {
             for (int ly = 0; ly < GameObjects.MainQuest.vecQuestFinish.size(); ly++) {
                 GameObjects.MainQuest lyQuest = (GameObjects.MainQuest) GameObjects.MainQuest.vecQuestFinish.elementAt(ly);
                 if (lyQuest != null && MainObject.get_Object(lyQuest.idNPC_To, (byte) 2) != null)
-                    LyMeowzNpcMapRegistry.remember(lyQuest.idNPC_To, GameCanvas.loadmap.idMap);
+                    LyMeowzNpcMapRegistry.remember(lyQuest.idNPC_To, GameCanvas.loadmap.idMap, LoadMap.Area & 255);
             }
         }
         updateLyMeowzQuestTravel();
