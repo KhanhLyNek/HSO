@@ -6,6 +6,8 @@ on:
       - 'sources/GameScreen/GameScreen.java'
       - 'sources/GameObjects/Player.java'
       - 'sources/GameScreen/LyMeowzMapReader.java'
+      - 'sources/GameScreen/LyMeowzNpcMapRegistry.java'
+      - 'sources/GameScreen/LyMeowzMapTransitions.java'
       - '.github/workflows/lymeowz-main-smoke.yml'
   workflow_dispatch:
 permissions:
@@ -47,7 +49,9 @@ jobs:
           javac -encoding UTF-8 -cp resources -d build/smoke \
             sources/GameScreen/GameScreen.java \
             sources/GameObjects/Player.java \
-            sources/GameScreen/LyMeowzMapReader.java 2>&1 | tee build/smoke-compile.log
+            sources/GameScreen/LyMeowzMapReader.java \
+            sources/GameScreen/LyMeowzNpcMapRegistry.java \
+            sources/GameScreen/LyMeowzMapTransitions.java 2>&1 | tee build/smoke-compile.log
           test -f build/smoke/GameScreen/GameScreen.class
           test -f build/smoke/GameObjects/Player.class
           test -f build/smoke/GameScreen/LyMeowzMapReader.class
