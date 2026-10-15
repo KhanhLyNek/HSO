@@ -31,6 +31,8 @@ jobs:
           assert 'mob.Lv < this.Lv - 3' in player
           assert 'isAutoFire < 0' in player
           assert 'this.hp <= 0' in player
+          assert 'nearbyPlayers < bestCrowding' in player
+          assert 'other.typeObject == 0' in player
           print('LyMeowz integration static checks: PASS')
           PY
       - name: Compile changed game sources against original class resources
