@@ -306,6 +306,10 @@ public class GameScreen extends MainScreen {
     }
 
     /** One master switch; advanced recovery/navigation remains disabled until integrated. */
+    public boolean isLyMeowzIntelligenceEnabled() {
+        return lyMeowzIntelligenceEnabled;
+    }
+
     public void toggleLyMeowzIntelligence() {
         if (!lyMeowzIntelligenceEnabled) {
             if (player == null || player.hp <= 0) {
