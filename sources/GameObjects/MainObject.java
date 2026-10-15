@@ -441,7 +441,7 @@ public class MainObject extends AvMain {
         this.typefocus = (byte) 1;
         this.typefire = (byte) 0;
         this.frameClan = (byte) 0;
-        this.mAction = new int[][]{new int[]{new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0}, new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0}, new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0}}, new int[]{new int[]{0, 0, 0, 1, 1, 1, 2, 2, 2}, new int[]{1, 1, 1, 0, 0, 0, 2, 2, 2}, new int[]{2, 2, 2, 0, 0, 0, 1, 1, 1}}, new int[]{new int[]{2, 2, 2, 2, 2, 3, 3, 3, 3}, new int[]{2, 2, 2, 2, 2, 3, 3, 3, 3}, new int[]{2, 2, 2, 2, 2, 3, 3, 3, 3}}, new int[]{new int[]{4, 4, 4, 4, 4, 4, 4, 4, 4}, new int[]{4, 4, 4, 4, 4, 4, 4, 4, 4}, new int[]{4, 4, 4, 4, 4, 4, 4, 4, 4}}, new int[]{new int[]{4, 4, 4, 4, 4, 4, 4, 4, 4}, new int[]{4, 4, 4, 4, 4, 4, 4, 4, 4}, new int[]{4, 4, 4, 4, 4, 4, 4, 4, 4}}};
+        this.mAction = new int[][][]{new int[][]{new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0}, new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0}, new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0}}, new int[][]{new int[]{0, 0, 0, 1, 1, 1, 2, 2, 2}, new int[]{1, 1, 1, 0, 0, 0, 2, 2, 2}, new int[]{2, 2, 2, 0, 0, 0, 1, 1, 1}}, new int[][]{new int[]{2, 2, 2, 2, 2, 3, 3, 3, 3}, new int[]{2, 2, 2, 2, 2, 3, 3, 3, 3}, new int[]{2, 2, 2, 2, 2, 3, 3, 3, 3}}, new int[][]{new int[]{4, 4, 4, 4, 4, 4, 4, 4, 4}, new int[]{4, 4, 4, 4, 4, 4, 4, 4, 4}, new int[]{4, 4, 4, 4, 4, 4, 4, 4, 4}}, new int[][]{new int[]{4, 4, 4, 4, 4, 4, 4, 4, 4}, new int[]{4, 4, 4, 4, 4, 4, 4, 4, 4}, new int[]{4, 4, 4, 4, 4, 4, 4, 4, 4}}};
         this.Fhorse = 0;
         this.FrameMatNa = (byte) 0;
         this.FrameWP = (byte) 0;
@@ -466,8 +466,8 @@ public class MainObject extends AvMain {
         this.fweapon = (byte) 0;
         this.timeShow = (byte) 8;
         this.transEff = new byte[]{2, 0, 2, 2};
-        this.eff_dx = new byte[]{new byte[]{-2, 4, 2, -10}, new byte[]{-2, 4, 2, -10}};
-        this.eff_dy = new byte[]{new byte[]{6, 5, 5, 2}, new byte[]{6, 5, 5, 2}};
+        this.eff_dx = new byte[][]{new byte[]{-2, 4, 2, -10}, new byte[]{-2, 4, 2, -10}};
+        this.eff_dy = new byte[][]{new byte[]{6, 5, 5, 2}, new byte[]{6, 5, 5, 2}};
     }
 
     public boolean isMainChar() {
@@ -576,7 +576,7 @@ public class MainObject extends AvMain {
         this.typefocus = (byte) 1;
         this.typefire = (byte) 0;
         this.frameClan = (byte) 0;
-        this.mAction = new int[][]{new int[]{new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0}, new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0}, new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0}}, new int[]{new int[]{0, 0, 0, 1, 1, 1, 2, 2, 2}, new int[]{1, 1, 1, 0, 0, 0, 2, 2, 2}, new int[]{2, 2, 2, 0, 0, 0, 1, 1, 1}}, new int[]{new int[]{2, 2, 2, 2, 2, 3, 3, 3, 3}, new int[]{2, 2, 2, 2, 2, 3, 3, 3, 3}, new int[]{2, 2, 2, 2, 2, 3, 3, 3, 3}}, new int[]{new int[]{4, 4, 4, 4, 4, 4, 4, 4, 4}, new int[]{4, 4, 4, 4, 4, 4, 4, 4, 4}, new int[]{4, 4, 4, 4, 4, 4, 4, 4, 4}}, new int[]{new int[]{4, 4, 4, 4, 4, 4, 4, 4, 4}, new int[]{4, 4, 4, 4, 4, 4, 4, 4, 4}, new int[]{4, 4, 4, 4, 4, 4, 4, 4, 4}}};
+        this.mAction = new int[][][]{new int[][]{new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0}, new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0}, new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0}}, new int[][]{new int[]{0, 0, 0, 1, 1, 1, 2, 2, 2}, new int[]{1, 1, 1, 0, 0, 0, 2, 2, 2}, new int[]{2, 2, 2, 0, 0, 0, 1, 1, 1}}, new int[][]{new int[]{2, 2, 2, 2, 2, 3, 3, 3, 3}, new int[]{2, 2, 2, 2, 2, 3, 3, 3, 3}, new int[]{2, 2, 2, 2, 2, 3, 3, 3, 3}}, new int[][]{new int[]{4, 4, 4, 4, 4, 4, 4, 4, 4}, new int[]{4, 4, 4, 4, 4, 4, 4, 4, 4}, new int[]{4, 4, 4, 4, 4, 4, 4, 4, 4}}, new int[][]{new int[]{4, 4, 4, 4, 4, 4, 4, 4, 4}, new int[]{4, 4, 4, 4, 4, 4, 4, 4, 4}, new int[]{4, 4, 4, 4, 4, 4, 4, 4, 4}}};
         this.Fhorse = 0;
         this.FrameMatNa = (byte) 0;
         this.FrameWP = (byte) 0;
@@ -601,8 +601,8 @@ public class MainObject extends AvMain {
         this.fweapon = (byte) 0;
         this.timeShow = (byte) 8;
         this.transEff = new byte[]{2, 0, 2, 2};
-        this.eff_dx = new byte[]{new byte[]{-2, 4, 2, -10}, new byte[]{-2, 4, 2, -10}};
-        this.eff_dy = new byte[]{new byte[]{6, 5, 5, 2}, new byte[]{6, 5, 5, 2}};
+        this.eff_dx = new byte[][]{new byte[]{-2, 4, 2, -10}, new byte[]{-2, 4, 2, -10}};
+        this.eff_dy = new byte[][]{new byte[]{6, 5, 5, 2}, new byte[]{6, 5, 5, 2}};
         this.ID = i;
         this.name = str;
         this.typeObject = b;
