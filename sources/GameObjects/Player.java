@@ -657,6 +657,8 @@ public class Player extends MainObject {
         int bestDistance = 2147483647;
         int bestCrowding = 2147483647;
         int range = (this.wFocus * 3) / 2;
+        // A smaller crowd penalty than a full screen prevents chasing distant mobs.
+        int crowdPenalty = range / 4;
         for (int n = 0; n < GameScreen.Vecplayers.size(); n++) {
             MainObject mob = (MainObject) GameScreen.Vecplayers.elementAt(n);
             if (mob == null || mob.typeObject != 1 || mob.typeBoss != 0 ||
@@ -674,8 +676,9 @@ public class Player extends MainObject {
                         MainObject.getDistance(mob.x, mob.y, other.x, other.y) < 160)
                     nearbyPlayers++;
             }
-            if (nearbyPlayers < bestCrowding ||
-                    (nearbyPlayers == bestCrowding && distance < bestDistance)) {
+            if (best == null ||
+                    distance + nearbyPlayers * crowdPenalty < bestDistance + bestCrowding * crowdPenalty ||
+                    (distance + nearbyPlayers * crowdPenalty == bestDistance + bestCrowding * crowdPenalty && distance < bestDistance)) {
                 best = mob;
                 bestDistance = distance;
                 bestCrowding = nearbyPlayers;
