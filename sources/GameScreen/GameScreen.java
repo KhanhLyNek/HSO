@@ -339,6 +339,7 @@ public class GameScreen extends MainScreen {
         mVector items = new mVector("LyMeowz menu");
         items.addElement(new iCommand((lyMeowzIntelligenceEnabled ? "Tat " : "Bat ") +
                 "Level up your intelligence", 82, this));
+        items.addElement(new iCommand("Tien do nhiem vu diet quai", 83, this));
         items.addElement(new iCommand("Quay lai", 81, this));
         GameCanvas.menu2.startAt(items, 2, "LyMeowz", false, null);
     }
@@ -361,6 +362,11 @@ public class GameScreen extends MainScreen {
                 break;
             case 82:
                 toggleLyMeowzIntelligence();
+                break;
+            case 83:
+                int remaining = Player.lyMeowzQuestKillsRemaining();
+                GameCanvas.addInfoChar("LyMeowz - Con " + remaining + " quai can diet cho nhiem vu.");
+                openLyMeowzMenu();
                 break;
             case 0:
                 if (infoGame.isMapThachdau()) {
