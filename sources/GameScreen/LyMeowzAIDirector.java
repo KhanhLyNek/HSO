@@ -24,6 +24,8 @@ public final class LyMeowzAIDirector {
         if (!value) {
             state = OFF;
             attemptedQuestId = -1;
+        } else if (state == OFF) {
+            state = TRAIN;
         }
     }
 
@@ -67,6 +69,7 @@ public final class LyMeowzAIDirector {
         }
     }
 
+    public boolean enabled() { return enabled; }
     public byte state() { return state; }
     public int lastErrorCode() { return lastErrorCode; }
     public int transitionCount() { return transitionCount; }
