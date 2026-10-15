@@ -145,6 +145,7 @@ public class GameScreen extends MainScreen {
     private int lyMeowzQuestTravelNpcId = -1;
     private int lyMeowzQuestTravelMap = -1;
     private int lyMeowzQuestTravelWaitTicks;
+    private int lyMeowzQuestTravelNpcWaitTicks;
     private int lyMeowzQuestTravelStallTicks;
     private int lyMeowzQuestTravelLastX;
     private int lyMeowzQuestTravelLastY;
@@ -357,6 +358,7 @@ public class GameScreen extends MainScreen {
         items.addElement(new iCommand("Di den NPC tra nhiem vu", 86, this));
         items.addElement(new iCommand((lyMeowzQuestTravelEnabled ? "Dung" : "Bat") +
                 " tu dong tim NPC qua map", 87, this));
+        items.addElement(new iCommand("Kiem tra tuyen NPC da hoc", 88, this));
         items.addElement(new iCommand("Quay lai", 81, this));
         GameCanvas.menu2.startAt(items, 2, "LyMeowz", false, null);
     }
@@ -386,6 +388,7 @@ public class GameScreen extends MainScreen {
         lyMeowzQuestTravelNpcId = npcId;
         lyMeowzQuestTravelMap = GameCanvas.loadmap.idMap;
         lyMeowzQuestTravelWaitTicks = 0;
+        lyMeowzQuestTravelNpcWaitTicks = 0;
         lyMeowzQuestTravelStallTicks = 0;
         lyMeowzQuestTravelWaitingForMap = false;
         lyMeowzQuestTravelOwnsPath = false;
@@ -475,6 +478,7 @@ public class GameScreen extends MainScreen {
         if (lyMeowzQuestTravelMap != mapId) {
             lyMeowzQuestTravelMap = mapId;
             lyMeowzQuestTravelWaitTicks = 0;
+            lyMeowzQuestTravelNpcWaitTicks = 0;
             lyMeowzQuestTravelWaitingForMap = false;
             lyMeowzQuestTravelOwnsPath = false;
             lyMeowzQuestTravelStallTicks = 0;
@@ -508,8 +512,14 @@ public class GameScreen extends MainScreen {
             return;
         }
         int destMap = LyMeowzNpcMapRegistry.findMap(lyMeowzQuestTravelNpcId);
-        if (destMap < 0 || destMap == mapId) {
-            stopLyMeowzQuestTravel("LyMeowz: Chua biet vi tri NPC tren map khac.");
+        if (destMap == mapId) {
+            // NPCs may stream in after the map-change packet; allow time to spawn.
+            if (++lyMeowzQuestTravelNpcWaitTicks > 30)
+                stopLyMeowzQuestTravel("LyMeowz: NPC chua duoc tai tren map dich.");
+            return;
+        }
+        if (destMap < 0) {
+            stopLyMeowzQuestTravel("LyMeowz: Chua biet map cua NPC, can quan sat NPC truoc.");
             return;
         }
         int[] next = LyMeowzMapTransitions.nextGate(mapId, destMap);
@@ -576,6 +586,32 @@ public class GameScreen extends MainScreen {
                 toggleLyMeowzQuestTravel();
                 openLyMeowzMenu();
                 break;
+            case 88:
+                int statusNpc = -1;
+                for (int q = 0; q < GameObjects.MainQuest.vecQuestFinish.size(); q++) {
+                    GameObjects.MainQuest quest = (GameObjects.MainQuest) GameObjects.MainQuest.vecQuestFinish.elementAt(q);
+                    if (quest != null) { statusNpc = quest.idNPC_To; break; }
+                }
+                if (statusNpc < 0) {
+                    GameCanvas.addInfoChar("LyMeowz: Khong co NPC cho nhiem vu da xong.");
+                } else {
+                    int statusMap = LyMeowzNpcMapRegistry.findMap(statusNpc);
+                    if (statusMap < 0) {
+                        GameCanvas.addInfoChar("LyMeowz: NPC " + statusNpc + " chua co map da hoc.");
+                    } else if (GameCanvas.loadmap.idMap == statusMap) {
+                        GameCanvas.addInfoChar("LyMeowz: NPC " + statusNpc + " o map hien tai " + statusMap + ".");
+                    } else {
+                        int[] statusGate = LyMeowzMapTransitions.nextGate(GameCanvas.loadmap.idMap, statusMap);
+                        if (statusGate == null)
+                            GameCanvas.addInfoChar("LyMeowz: Biet map " + statusMap + " nhung chua hoc du cong.");
+                        else
+                            GameCanvas.addInfoChar("LyMeowz: Map dich " + statusMap + ", cong " +
+                                    statusGate[0] + "," + statusGate[1] + " sang map " + statusGate[2] + ".");
+                    }
+                }
+                openLyMeowzMenu();
+                break;
+
             case 86:
                 boolean routeFound = false;
                 for (int q = 0; q < GameObjects.MainQuest.vecQuestFinish.size(); q++) {
