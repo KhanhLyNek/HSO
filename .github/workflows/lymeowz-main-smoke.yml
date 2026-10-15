@@ -9,6 +9,7 @@ on:
       - 'sources/GameScreen/LyMeowzNpcMapRegistry.java'
       - 'sources/GameScreen/LyMeowzMapTransitions.java'
       - 'sources/netcommand/global/ReadMessenge.java'
+      - 'tests/LyMeowzNavigationTest.java'
       - '.github/workflows/lymeowz-main-smoke.yml'
   workflow_dispatch:
 permissions:
@@ -90,6 +91,14 @@ jobs:
           EOF
           javac -cp build/smoke -d /tmp /tmp/TestLyMeowzMap.java
           java -cp /tmp:build/smoke TestLyMeowzMap
+      - name: Test cross-map BFS, gate IDs and quest NPC cache
+        run: |
+          set -euo pipefail
+          javac -cp build/smoke -d build/smoke tests/LyMeowzNavigationTest.java
+          java -cp build/smoke LyMeowzNavigationTest
+          test -f build/smoke/netcommand/global/ReadMessenge.class
+          test -f build/smoke/GameScreen/LyMeowzMapTransitions.class
+          test -f build/smoke/GameScreen/LyMeowzNpcMapRegistry.class
       - name: Upload compile output
         if: always()
         uses: actions/upload-artifact@v4
