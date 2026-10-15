@@ -32,6 +32,8 @@ roots = [
   'sources/GameScreen/LyMeowzTrainingSpotRegistry.java',
   'sources/GameScreen/LyMeowzRecovery.java',
   'sources/GameObjects/Player.java',
+  'sources/GameObjects/MainObject.java',
+  'sources/GameObjects/MountTemplate.java',
   'sources/GameObjects/MainQuest.java',
   'sources/GameObjects/NPC.java',
   'sources/netcommand/global/ReadMessenge.java',
@@ -70,6 +72,8 @@ java -jar "$TOOL/ecj.jar" -1.3 -target cldc1.1 -encoding UTF-8 \
   -bootclasspath "$TOOL/cldcapi10.jar:$TOOL/midpapi20.jar" \
   -classpath resources -d build/j2me/classes "${SOURCE_FILES[@]}"
 
+test -s build/j2me/classes/GameObjects/MainObject.class
+test -s build/j2me/classes/GameObjects/MountTemplate.class
 test -s build/j2me/classes/GameScreen/GameScreen.class
 test -s build/j2me/classes/netcommand/global/ReadMessenge.class
 test -s build/j2me/classes/GameScreen/LyMeowzAIDirector.class
