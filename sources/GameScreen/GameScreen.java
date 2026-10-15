@@ -1488,6 +1488,26 @@ public class GameScreen extends MainScreen {
         int i14 = i7;
         short s = (short) i13;
         short s2 = (short) i14;
+        // Use bounded BFS first. Keep the original reverse-path encoding used by
+        // the game's movement consumer, falling back to native routing if needed.
+        int[] lyTiles = new int[GameCanvas.loadmap.mapFind.length * GameCanvas.loadmap.mapFind[0].length];
+        int lyWidth = GameCanvas.loadmap.mapFind.length;
+        int lyHeight = GameCanvas.loadmap.mapFind[0].length;
+        for (int lyX = 0; lyX < lyWidth; lyX++) {
+            for (int lyY = 0; lyY < lyHeight; lyY++) {
+                lyTiles[lyY * lyWidth + lyX] = GameCanvas.loadmap.mapFind[lyX][lyY] == -1 ? 1 : 0;
+            }
+        }
+        short[] lyRoute = LyMeowzMapReader.route(lyTiles, lyWidth, lyHeight,
+                i6, i7, i8, i9, i5);
+        if (lyRoute.length > 0) {
+            short[] nativeRoute = new short[lyRoute.length + 1];
+            for (int lyStep = 0; lyStep < lyRoute.length; lyStep++) {
+                nativeRoute[lyStep] = lyRoute[lyRoute.length - 1 - lyStep];
+            }
+            nativeRoute[lyRoute.length] = (short) ((i6 << 8) | i7);
+            return nativeRoute;
+        }
         if (GameCanvas.loadmap.mapFind[i13][i14] == -1 ||
                 GameCanvas.loadmap.mapFind[i8][i9] == -1) {
             return new short[i5 + 1];
