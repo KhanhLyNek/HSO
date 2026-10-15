@@ -1,0 +1,39 @@
+name: Phase 2 navigation policies
+
+on:
+  push:
+    branches: [release/phase2-navigation-policies]
+  pull_request:
+    paths:
+      - 'sources/tools/navigation/**'
+      - 'tests/tools/navigation/**'
+      - '.github/workflows/phase2-navigation-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+      - name: Compile navigation policies and tests
+        run: |
+          set -euo pipefail
+          mkdir -p build/phase2
+          javac -encoding UTF-8 -d build/phase2 \
+            sources/tools/navigation/TilePathfinder.java \
+            sources/tools/navigation/WorldMemory.java \
+            tests/tools/navigation/TilePathfinderTest.java \
+            tests/tools/navigation/WorldMemoryTest.java
+      - name: Run navigation regression tests
+        run: |
+          set -euo pipefail
+          java -cp build/phase2 tools.navigation.TilePathfinderTest
+          java -cp build/phase2 tools.navigation.WorldMemoryTest
