@@ -52,6 +52,11 @@ public final class LyMeowzNpcMapRegistry {
         return -1;
     }
 
+    public static synchronized void clear() {
+        size = 0;
+        revision++;
+    }
+
     public static synchronized int revision() { return revision; }
     public static synchronized int size() { return size; }
 
