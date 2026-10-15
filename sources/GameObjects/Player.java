@@ -646,7 +646,39 @@ public class Player extends MainObject {
         }
     }
 
+    /** Prefer normal monsters at own level or 1-3 levels below. */
+    private boolean selectLyMeowzLevelTarget() {
+        if (GameCanvas.game == null || !GameCanvas.game.isLyMeowzIntelligenceEnabled())
+            return false;
+        MainObject best = null;
+        int bestDistance = 2147483647;
+        int range = (this.wFocus * 3) / 2;
+        for (int n = 0; n < GameScreen.Vecplayers.size(); n++) {
+            MainObject mob = (MainObject) GameScreen.Vecplayers.elementAt(n);
+            if (mob == null || mob.typeObject != 1 || mob.typeBoss != 0 ||
+                    mob.typeMonster != 0 || mob.Action == 4 || mob.isDie || mob.isSend ||
+                    mob.hp <= 0 || mob.Lv > this.Lv || mob.Lv < this.Lv - 3)
+                continue;
+            int distance = MainObject.getDistance(this.x, this.y, mob.x, mob.y);
+            if (distance < range && distance < bestDistance) {
+                best = mob;
+                bestDistance = distance;
+            }
+        }
+        if (best != null) {
+            PaintInfoGameScreen.isPaintInfoFocus = true;
+            GameScreen.ObjFocus = best;
+            demUnFire = (short) 0;
+        } else {
+            PaintInfoGameScreen.isPaintInfoFocus = false;
+            GameScreen.ObjFocus = null;
+            demUnFire = (short) (demUnFire + 1);
+        }
+        return true;
+    }
+
     public void nextMonster() {
+        if (selectLyMeowzLevelTarget()) return;
         int distance;
         if (!isCurAutoFire) {
             isAutoFire = (byte) -1;
