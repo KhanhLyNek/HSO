@@ -53,6 +53,10 @@ public final class LyMeowzDirectorTest {
         check(log.questKills() == 1 && log.mapHops() == 1 && log.failures() == 1,
                 "event counts");
         check(log.latestEvent().indexOf("path failure") >= 0, "error journal");
+        log.event("second message");
+        check(log.recentEvent(0).indexOf("second message") >= 0, "newest log entry");
+        check(log.recentEvent(1).indexOf("path failure") >= 0, "previous error log");
+        check(log.recentEvent(100) == null, "bounded history");
         System.out.println("LyMeowz Director / recovery / diagnostics tests: PASS");
     }
 }
