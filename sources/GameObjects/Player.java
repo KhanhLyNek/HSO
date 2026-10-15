@@ -671,6 +671,29 @@ public class Player extends MainObject {
         return false;
     }
 
+    /** Total outstanding kills across accepted main and side quests. */
+    public static int lyMeowzQuestKillsRemaining() {
+        int remaining = 0;
+        for (int group = 0; group < 2; group++) {
+            mVector quests = group == 0 ? MainQuest.vecQuestDoing_Main : MainQuest.vecQuestDoing_Sub;
+            if (quests == null) continue;
+            for (int q = 0; q < quests.size(); q++) {
+                MainQuest quest = (MainQuest) quests.elementAt(q);
+                if (quest == null || quest.isComplete || quest.typeQuest != MainQuest.Q_KILL_MONSTER ||
+                        quest.mIdQuest == null || quest.mQuestGot == null || quest.mtotalQuest == null)
+                    continue;
+                int count = quest.mIdQuest.length;
+                if (quest.mQuestGot.length < count) count = quest.mQuestGot.length;
+                if (quest.mtotalQuest.length < count) count = quest.mtotalQuest.length;
+                for (int k = 0; k < count; k++) {
+                    int missing = quest.mtotalQuest[k] - quest.mQuestGot[k];
+                    if (missing > 0) remaining += missing;
+                }
+            }
+        }
+        return remaining;
+    }
+
     /** Prefer normal monsters at own level or 1-3 levels below. */
     private boolean selectLyMeowzLevelTarget() {
         if (GameCanvas.game == null || !GameCanvas.game.isLyMeowzIntelligenceEnabled())
