@@ -342,6 +342,7 @@ public class GameScreen extends MainScreen {
         items.addElement(new iCommand("Tien do nhiem vu diet quai", 83, this));
         items.addElement(new iCommand("Tim NPC tra nhiem vu", 84, this));
         items.addElement(new iCommand("Mo menu tra nhiem vu", 85, this));
+        items.addElement(new iCommand("Di den NPC tra nhiem vu", 86, this));
         items.addElement(new iCommand("Quay lai", 81, this));
         GameCanvas.menu2.startAt(items, 2, "LyMeowz", false, null);
     }
@@ -369,6 +370,36 @@ public class GameScreen extends MainScreen {
                 int remaining = Player.lyMeowzQuestKillsRemaining();
                 GameCanvas.addInfoChar("LyMeowz - Con " + remaining + " quai can diet cho nhiem vu.");
                 openLyMeowzMenu();
+                break;
+            case 86:
+                boolean routeFound = false;
+                for (int q = 0; q < GameObjects.MainQuest.vecQuestFinish.size(); q++) {
+                    GameObjects.MainQuest quest = (GameObjects.MainQuest) GameObjects.MainQuest.vecQuestFinish.elementAt(q);
+                    if (quest == null) continue;
+                    MainObject npc = MainObject.get_Object(quest.idNPC_To, (byte) 2);
+                    if (npc == null) continue;
+                    if (MainObject.getDistance(player.x, player.y, npc.x, npc.y) <= 100) {
+                        if (npc instanceof GameObjects.NPC) {
+                            ((GameObjects.NPC) npc).NhiemVu();
+                            routeFound = true;
+                        }
+                    } else if (Thread_More.LoadMap.wTile > 0) {
+                        short[] route = updateFindRoad(npc.x / Thread_More.LoadMap.wTile,
+                                npc.y / Thread_More.LoadMap.wTile,
+                                player.x / Thread_More.LoadMap.wTile,
+                                player.y / Thread_More.LoadMap.wTile, 20);
+                        if (route != null && route.length > 0 && route.length <= 20) {
+                            player.posTransRoad = route;
+                            routeFound = true;
+                            GameCanvas.addInfoChar("LyMeowz: Dang di den NPC, bam mo menu khi den gan.");
+                        }
+                    }
+                    break;
+                }
+                if (!routeFound) {
+                    GameCanvas.addInfoChar("LyMeowz: Khong tim duoc duong an toan den NPC tren map nay.");
+                    openLyMeowzMenu();
+                }
                 break;
             case 85:
                 boolean openedQuest = false;
