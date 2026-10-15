@@ -969,25 +969,10 @@ public class ReadMessenge extends AvMain {
             GameScreen.Remove_ChangeMap();
             GameScreen.RemoveLoadMap();
             int lyPreviousMap = GameCanvas.loadmap.idMap;
+            int lyPreviousArea = LoadMap.Area;
             int lyPreviousX = GameScreen.player.x;
             int lyPreviousY = GameScreen.player.y;
             GameCanvas.loadmap.idMap = message.reader().readShort();
-            if (lyPreviousMap >= 0 && lyPreviousMap != GameCanvas.loadmap.idMap) {
-                Point lyGate = null;
-                int lyDistanceSquared = 80 * 80;
-                for (int ly = 0; ly < LoadMap.vecPointChange.size(); ly++) {
-                    Point candidate = (Point) LoadMap.vecPointChange.elementAt(ly);
-                    int dx = candidate.x - lyPreviousX;
-                    int dy = candidate.y - lyPreviousY;
-                    int distance = dx * dx + dy * dy;
-                    if (distance < lyDistanceSquared) {
-                        lyDistanceSquared = distance;
-                        lyGate = candidate;
-                    }
-                }
-                if (lyGate != null)
-                    LyMeowzMapTransitions.remember(lyPreviousMap, GameCanvas.loadmap.idMap, lyGate.x, lyGate.y);
-            }
             GameCanvas.worldmap.setPosPlayer(GameCanvas.loadmap.idMap);
             GameScreen.infoGame.setCountTimeHS(GameCanvas.loadmap.idMap, mSystem.currentTimeMillis(), 30);
             GameScreen.player.x = message.reader().readShort() * 24;
@@ -1077,6 +1062,14 @@ public class ReadMessenge extends AvMain {
             }
             byte readByte3 = message.reader().readByte();
             LoadMap.Area = message.reader().readByte();
+            // The server distinguishes portal travel from teleport-style loading.
+            // Only a recently armed, physically approached gate teaches an edge.
+            if (readByte3 != 1)
+                LyMeowzMapTransitions.confirmedTransition(lyPreviousMap, lyPreviousArea,
+                        GameCanvas.loadmap.idMap, LoadMap.Area, lyPreviousX, lyPreviousY,
+                        System.currentTimeMillis());
+            else
+                LyMeowzMapTransitions.disarm();
             ChildLocationDiagnostics.onMapChanged(GameCanvas.loadmap.idMap, GameCanvas.loadmap.nameMap, LoadMap.Area);
             GameCanvas.end_Dialog();
             GameCanvas.clearKeyHold();
@@ -3441,6 +3434,7 @@ public class ReadMessenge extends AvMain {
             GameScreen.RemoveLoadMap();
             LoadMapScreen.isNextMap = true;
             LoadMap.Area = message.reader().readByte();
+            LyMeowzMapTransitions.disarm();
             ChildLocationDiagnostics.onAreaChanged(LoadMap.Area);
             GameScreen.player.x = message.reader().readShort() * 24;
             GameScreen.player.y = message.reader().readShort() * 24;
