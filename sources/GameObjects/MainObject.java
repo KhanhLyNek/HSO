@@ -2380,7 +2380,7 @@ public class MainObject extends AvMain {
     }
 
     public boolean isMountFly() {
-        if (this.typeMount != -1 && MountTemplate.Arr_Fly != null && MountTemplate.Arr_Fly[this.typeMount] == 1) {
+        if (MountTemplate.canFly(this.typeMount)) {
             return true;
         }
         return false;
@@ -3055,28 +3055,58 @@ public class MainObject extends AvMain {
     }
 
     public int getVmount() {
-        if (this.typeMount == -1) {
-            return 0;
-        }
-        return MountTemplate.speed[this.typeMount];
+        return MountTemplate.safeSpeed(this.typeMount);
     }
 
     public boolean isFramePaintMount_Truoc() {
-        if (this.typeMount == -1) {
+        int type = this.typeMount;
+        if (this.frameMount == -1 || !MountTemplate.hasAnimationData(type)) {
             return false;
         }
-        for (byte b : MountTemplate.FRAME_VE_TRUOC[this.typeMount]) {
-            if (this.frameMount == b && this.frameMount != -1) {
-                return true;
-            }
+        // Keep a local row to avoid repeatedly dereferencing a template being
+        // replaced by the network loading thread.
+        byte[][] frames = MountTemplate.FRAME_VE_TRUOC;
+        if (frames == null || type >= frames.length || frames[type] == null) {
+            return false;
+        }
+        byte[] visible = frames[type];
+        for (int i = 0; i < visible.length; i++) {
+            if (this.frameMount == visible[i]) return true;
         }
         return false;
     }
 
     public void updateMount() {
-        if (this.typeMount == -1) {
+        int type = this.typeMount;
+        if (type == -1) return;
+        if (!MountTemplate.hasAnimationData(type)) {
+            // Keep the authoritative typeMount and idHorse. Missing animation
+            // data should not crash or permanently unequip other players.
+            this.A_Move = ArrMount1;
+            this.frameMount = (byte) -1;
+            this.fMount = (byte) 0;
+            this.xMount = 0;
+            this.yMount = 0;
+            this.dyMount = 0;
             return;
         }
+        // Snapshot rows before accessing indexes. The server loads these
+        // tables asynchronously and can replace the outer arrays.
+        byte[] lyMountX = MountTemplate.dx[type];
+        byte[] lyMountY = MountTemplate.dy[type];
+        byte[] lyMountStand = MountTemplate.DY_CHAR_STAND[type];
+        byte[] lyMountMove = MountTemplate.DY_CHAR_MOVE[type];
+        byte[] lyFrameLR = MountTemplate.FRAME_MOVE_LR[type];
+        byte[] lyFrameUp = MountTemplate.FRAME_MOVE_UP[type];
+        byte[] lyFrameDown = MountTemplate.FRAME_MOVE_DOWN[type];
+        if (lyMountX == null || lyMountX.length < 8 ||
+                lyMountY == null || lyMountY.length < 8 ||
+                lyMountStand == null || lyMountStand.length < 4 ||
+                lyMountMove == null || lyMountMove.length < 12 ||
+                lyFrameLR == null || lyFrameLR.length == 0 ||
+                lyFrameUp == null || lyFrameUp.length == 0 ||
+                lyFrameDown == null || lyFrameDown.length == 0)
+            return;
         DataSkillEff effMatNa = getEffMatNa(this.idHorse);
         if (GameCanvas.gameTick % 5 == 0 && effMatNa != null) {
             int size = effMatNa.listFrame.size() / 21;
@@ -3096,9 +3126,9 @@ public class MainObject extends AvMain {
                     } else {
                         this.frameMount = (byte) 0;
                     }
-                    this.xMount = MountTemplate.dx[this.typeMount][0];
-                    this.yMount = MountTemplate.dy[this.typeMount][0];
-                    this.dyMount = MountTemplate.DY_CHAR_STAND[this.typeMount][0];
+                    this.xMount = lyMountX[0];
+                    this.yMount = lyMountY[0];
+                    this.dyMount = lyMountStand[0];
                     return;
                 }
                 if (this.Direction == 3) {
@@ -3107,9 +3137,9 @@ public class MainObject extends AvMain {
                     } else {
                         this.frameMount = (byte) 0;
                     }
-                    this.xMount = MountTemplate.dx[this.typeMount][2];
-                    this.yMount = MountTemplate.dy[this.typeMount][2];
-                    this.dyMount = MountTemplate.DY_CHAR_STAND[this.typeMount][1];
+                    this.xMount = lyMountX[2];
+                    this.yMount = lyMountY[2];
+                    this.dyMount = lyMountStand[1];
                     return;
                 }
                 if (this.Direction == 1) {
@@ -3118,9 +3148,9 @@ public class MainObject extends AvMain {
                     } else {
                         this.frameMount = (byte) 10;
                     }
-                    this.xMount = MountTemplate.dx[this.typeMount][4];
-                    this.yMount = MountTemplate.dy[this.typeMount][4];
-                    this.dyMount = MountTemplate.DY_CHAR_STAND[this.typeMount][2];
+                    this.xMount = lyMountX[4];
+                    this.yMount = lyMountY[4];
+                    this.dyMount = lyMountStand[2];
                     return;
                 }
                 if (this.frame == 1) {
@@ -3128,26 +3158,26 @@ public class MainObject extends AvMain {
                 } else {
                     this.frameMount = (byte) 5;
                 }
-                this.xMount = MountTemplate.dx[this.typeMount][6];
-                this.yMount = MountTemplate.dy[this.typeMount][6];
-                this.dyMount = MountTemplate.DY_CHAR_STAND[this.typeMount][3];
+                this.xMount = lyMountX[6];
+                this.yMount = lyMountY[6];
+                this.dyMount = lyMountStand[3];
                 return;
             }
             if (this.Action == 1) {
                 this.fMount = (byte) (this.fMount + 1);
                 if (this.Direction == 2) {
-                    if (this.fMount > MountTemplate.FRAME_MOVE_LR[this.typeMount].length - 1) {
+                    if (this.fMount > lyFrameLR.length - 1) {
                         this.fMount = (byte) 0;
                     }
-                    this.frameMount = MountTemplate.FRAME_MOVE_LR[this.typeMount][this.fMount];
-                    this.xMount = MountTemplate.dx[this.typeMount][1];
-                    this.yMount = MountTemplate.dy[this.typeMount][1];
+                    this.frameMount = lyFrameLR[this.fMount];
+                    this.xMount = lyMountX[1];
+                    this.yMount = lyMountY[1];
                     if (this.frameMount == 3) {
-                        this.dyMount = MountTemplate.DY_CHAR_MOVE[this.typeMount][0];
+                        this.dyMount = lyMountMove[0];
                     } else if (this.frameMount == 2) {
-                        this.dyMount = MountTemplate.DY_CHAR_MOVE[this.typeMount][1];
+                        this.dyMount = lyMountMove[1];
                     } else {
-                        this.dyMount = MountTemplate.DY_CHAR_MOVE[this.typeMount][2];
+                        this.dyMount = lyMountMove[2];
                     }
                     if (this.fMount == 4 && !isMountFly()) {
                         GameScreen.addEffectEndKill_Direction(55, this.x + 19, this.y - 5, this.Direction, (byte) -1);
@@ -3156,18 +3186,18 @@ public class MainObject extends AvMain {
                     return;
                 }
                 if (this.Direction == 3) {
-                    if (this.fMount > MountTemplate.FRAME_MOVE_LR[this.typeMount].length - 1) {
+                    if (this.fMount > lyFrameLR.length - 1) {
                         this.fMount = (byte) 0;
                     }
-                    this.frameMount = MountTemplate.FRAME_MOVE_LR[this.typeMount][this.fMount];
-                    this.xMount = MountTemplate.dx[this.typeMount][3];
-                    this.yMount = MountTemplate.dy[this.typeMount][3];
+                    this.frameMount = lyFrameLR[this.fMount];
+                    this.xMount = lyMountX[3];
+                    this.yMount = lyMountY[3];
                     if (this.frameMount == 3) {
-                        this.dyMount = MountTemplate.DY_CHAR_MOVE[this.typeMount][3];
+                        this.dyMount = lyMountMove[3];
                     } else if (this.frameMount == 2) {
-                        this.dyMount = MountTemplate.DY_CHAR_MOVE[this.typeMount][4];
+                        this.dyMount = lyMountMove[4];
                     } else {
-                        this.dyMount = MountTemplate.DY_CHAR_MOVE[this.typeMount][5];
+                        this.dyMount = lyMountMove[5];
                     }
                     if (this.fMount == 4 && !isMountFly()) {
                         GameScreen.addEffectEndKill_Direction(55, this.x - 11, this.y - 5, this.Direction, (byte) -1);
@@ -3176,18 +3206,18 @@ public class MainObject extends AvMain {
                     return;
                 }
                 if (this.Direction == 1) {
-                    if (this.fMount > MountTemplate.FRAME_MOVE_UP[this.typeMount].length - 1) {
+                    if (this.fMount > lyFrameUp.length - 1) {
                         this.fMount = (byte) 0;
                     }
-                    this.frameMount = MountTemplate.FRAME_MOVE_UP[this.typeMount][this.fMount];
-                    this.xMount = MountTemplate.dx[this.typeMount][5];
-                    this.yMount = MountTemplate.dy[this.typeMount][5];
+                    this.frameMount = lyFrameUp[this.fMount];
+                    this.xMount = lyMountX[5];
+                    this.yMount = lyMountY[5];
                     if (this.frameMount == 13) {
-                        this.dyMount = MountTemplate.DY_CHAR_MOVE[this.typeMount][6];
+                        this.dyMount = lyMountMove[6];
                     } else if (this.frameMount == 12) {
-                        this.dyMount = MountTemplate.DY_CHAR_MOVE[this.typeMount][7];
+                        this.dyMount = lyMountMove[7];
                     } else {
-                        this.dyMount = MountTemplate.DY_CHAR_MOVE[this.typeMount][8];
+                        this.dyMount = lyMountMove[8];
                     }
                     if (this.fMount == 4 && !isMountFly()) {
                         GameScreen.addEffectEndKill_Direction(55, this.x - 14, this.y - 7, 3, (byte) -1);
@@ -3196,18 +3226,18 @@ public class MainObject extends AvMain {
                     }
                     return;
                 }
-                if (this.fMount > MountTemplate.FRAME_MOVE_DOWN[this.typeMount].length - 1) {
+                if (this.fMount > lyFrameDown.length - 1) {
                     this.fMount = (byte) 0;
                 }
-                this.frameMount = MountTemplate.FRAME_MOVE_DOWN[this.typeMount][this.fMount];
-                this.xMount = MountTemplate.dx[this.typeMount][7];
-                this.yMount = MountTemplate.dy[this.typeMount][7];
+                this.frameMount = lyFrameDown[this.fMount];
+                this.xMount = lyMountX[7];
+                this.yMount = lyMountY[7];
                 if (this.frameMount == 8) {
-                    this.dyMount = MountTemplate.DY_CHAR_MOVE[this.typeMount][9];
+                    this.dyMount = lyMountMove[9];
                 } else if (this.frameMount == 7) {
-                    this.dyMount = MountTemplate.DY_CHAR_MOVE[this.typeMount][10];
+                    this.dyMount = lyMountMove[10];
                 } else {
-                    this.dyMount = MountTemplate.DY_CHAR_MOVE[this.typeMount][11];
+                    this.dyMount = lyMountMove[11];
                 }
                 if (this.fMount == 4 && !isMountFly()) {
                     GameScreen.addEffectEndKill_Direction(55, this.x - 15, this.y - 10, 3, (byte) -1);
@@ -3228,14 +3258,18 @@ public class MainObject extends AvMain {
 
     public void paintMount_Truoc(mGraphics mgraphics) {
         FrameImage frameImageMount;
-        if (this.idHorse == -1 && this.typeMount != -1 && !this.isDongBang && (frameImageMount = FrameImage.getFrameImageMount(this.typeMount, 3, 5, 0)) != null && isFramePaintMount_Truoc()) {
+        if (this.idHorse == -1 && MountTemplate.hasAnimationData(this.typeMount) &&
+                this.frameMount >= 0 && !this.isDongBang &&
+                (frameImageMount = FrameImage.getFrameImageMount(this.typeMount, 3, 5, 0)) != null && isFramePaintMount_Truoc()) {
             frameImageMount.drawFrameNew(this.frameMount, this.x + this.xMount, ((((this.y - this.ysai) - this.dy) + this.dyWater) - this.yjum) + this.yMount, this.Direction > 2 ? 2 : 0, 33, mgraphics);
         }
     }
 
     public void paintMount_Sau(mGraphics mgraphics) {
         FrameImage frameImageMount;
-        if (this.idHorse == -1 && this.typeMount != -1 && !this.isDongBang && (frameImageMount = FrameImage.getFrameImageMount(this.typeMount, 3, 5, 0)) != null && !isFramePaintMount_Truoc()) {
+        if (this.idHorse == -1 && MountTemplate.hasAnimationData(this.typeMount) &&
+                this.frameMount >= 0 && !this.isDongBang &&
+                (frameImageMount = FrameImage.getFrameImageMount(this.typeMount, 3, 5, 0)) != null && !isFramePaintMount_Truoc()) {
             frameImageMount.drawFrameNew(this.frameMount, this.x + this.xMount, ((((this.y - this.ysai) - this.dy) + this.dyWater) - this.yjum) + this.yMount, this.Direction > 2 ? 2 : 0, 33, mgraphics);
         }
     }
