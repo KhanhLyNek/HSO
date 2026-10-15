@@ -61,7 +61,14 @@ jobs:
             public final void notifyDestroyed() {}
           }
           EOF
-          javac -d build/smoke-stubs build/stub-src/javax/microedition/midlet/MIDlet.java
+          mkdir -p build/stub-src/javax/microedition/lcdui
+          cat > build/stub-src/javax/microedition/lcdui/Image.java <<'EOF'
+          package javax.microedition.lcdui;
+          public class Image {}
+          EOF
+          javac -d build/smoke-stubs \
+            build/stub-src/javax/microedition/midlet/MIDlet.java \
+            build/stub-src/javax/microedition/lcdui/Image.java
           javac -encoding UTF-8 -cp resources:build/smoke-stubs -d build/smoke \
             sources/GameScreen/GameScreen.java \
             sources/GameObjects/Player.java \
