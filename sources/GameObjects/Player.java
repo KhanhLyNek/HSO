@@ -655,6 +655,7 @@ public class Player extends MainObject {
             return true;
         MainObject best = null;
         int bestDistance = 2147483647;
+        int bestCrowding = 2147483647;
         int range = (this.wFocus * 3) / 2;
         for (int n = 0; n < GameScreen.Vecplayers.size(); n++) {
             MainObject mob = (MainObject) GameScreen.Vecplayers.elementAt(n);
@@ -663,9 +664,21 @@ public class Player extends MainObject {
                     mob.hp <= 0 || mob.Lv > this.Lv || mob.Lv < this.Lv - 3)
                 continue;
             int distance = MainObject.getDistance(this.x, this.y, mob.x, mob.y);
-            if (distance < range && distance < bestDistance) {
+            if (distance >= range) continue;
+            // Prefer quieter visible spots; never switch zones or move automatically here.
+            int nearbyPlayers = 0;
+            for (int j = 0; j < GameScreen.Vecplayers.size(); j++) {
+                MainObject other = (MainObject) GameScreen.Vecplayers.elementAt(j);
+                if (other != null && other != this && other.typeObject == 0 &&
+                        other.Action != 4 &&
+                        MainObject.getDistance(mob.x, mob.y, other.x, other.y) < 160)
+                    nearbyPlayers++;
+            }
+            if (nearbyPlayers < bestCrowding ||
+                    (nearbyPlayers == bestCrowding && distance < bestDistance)) {
                 best = mob;
                 bestDistance = distance;
+                bestCrowding = nearbyPlayers;
             }
         }
         if (best != null) {
