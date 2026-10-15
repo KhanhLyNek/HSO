@@ -97,7 +97,7 @@ public class Player extends MainObject {
     public static int diemTiemNang = 0;
     public static int diemKyNang = 0;
     public static int[][] mTiemnang = mSystem.new_M_Int(2, 4);
-    public static HotKey[][] mhotkey = new HotKey[3];
+    public static HotKey[][] mhotkey = new HotKey[3][];
     public static short maxInven = 42;
     public static short maxChest = 20;
     public static short maxPet = 24;
