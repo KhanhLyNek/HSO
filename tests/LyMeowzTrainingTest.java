@@ -1,4 +1,5 @@
 import GameScreen.LyMeowzTrainingPlanner;
+import GameScreen.LyMeowzTrainingSpotRegistry;
 
 public final class LyMeowzTrainingTest {
     private static void ok(boolean v,String message) {
@@ -22,6 +23,20 @@ public final class LyMeowzTrainingTest {
                 "prefer nearby appropriate-level monster");
         ok(LyMeowzTrainingPlanner.crowdPenalty(240, 2) == 120,
                 "bounded crowd penalty");
+        LyMeowzTrainingSpotRegistry.clear();
+        ok(LyMeowzTrainingSpotRegistry.best(30, -1, 10, 0) == null,
+                "unobserved maps not guessed");
+        LyMeowzTrainingSpotRegistry.observe(15,30,10,0,240,120,4);
+        LyMeowzTrainingSpotRegistry.observe(15,29,11,2,360,150,0);
+        int[] recommended=LyMeowzTrainingSpotRegistry.best(30,15,10,0);
+        ok(recommended != null && recommended[0] == 11 && recommended[1] == 2,
+                "quiet area is preferred over crowded local spawn");
+        ok(LyMeowzTrainingSpotRegistry.best(30,999,10,0) == null,
+                "quest category filter blocks unrelated mobs");
+        LyMeowzTrainingSpotRegistry.observe(15,40,11,2,360,150,0);
+        recommended=LyMeowzTrainingSpotRegistry.best(30,15,10,0);
+        ok(recommended != null && recommended[0] == 10,
+                "unsafe overlevel hunting area not selected");
         System.out.println("LyMeowz training safety tests: PASS");
     }
 }
