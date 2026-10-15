@@ -9,6 +9,7 @@ on:
       - 'sources/GameScreen/LyMeowzMapReader.java'
       - 'sources/GameScreen/LyMeowzNpcMapRegistry.java'
       - 'sources/GameScreen/LyMeowzMapTransitions.java'
+      - 'sources/GameScreen/LyMeowzWorldStore.java'
       - 'sources/netcommand/global/ReadMessenge.java'
       - 'tests/LyMeowzNavigationTest.java'
       - '.github/workflows/lymeowz-main-smoke.yml'
@@ -76,6 +77,7 @@ jobs:
             sources/GameScreen/LyMeowzMapReader.java \
             sources/GameScreen/LyMeowzNpcMapRegistry.java \
             sources/GameScreen/LyMeowzMapTransitions.java \
+            sources/GameScreen/LyMeowzWorldStore.java \
             sources/netcommand/global/ReadMessenge.java \
             sources/Main/ChildLocationDiagnostics.java 2>&1 | tee build/smoke-compile.log
           test -f build/smoke/GameScreen/GameScreen.class
@@ -105,7 +107,7 @@ jobs:
         run: |
           set -euo pipefail
           javac -cp build/smoke -d build/smoke tests/LyMeowzNavigationTest.java
-          java -cp build/smoke LyMeowzNavigationTest
+          java -cp build/smoke:resources LyMeowzNavigationTest
           test -f build/smoke/netcommand/global/ReadMessenge.class
           test -f build/smoke/GameScreen/LyMeowzMapTransitions.class
           test -f build/smoke/GameScreen/LyMeowzNpcMapRegistry.class
