@@ -758,6 +758,14 @@ public class Player extends MainObject {
                 bestIsQuest = questTarget;
             }
         }
+        if (best == null && hasQuest) {
+            // All visible targets are unavailable: stop attacking rather than
+            // silently switching to monsters unrelated to the active quest.
+            GameScreen.ObjFocus = null;
+            PaintInfoGameScreen.isPaintInfoFocus = false;
+            demUnFire = (short) (demUnFire + 1);
+            return true;
+        }
         if (best != null) {
             PaintInfoGameScreen.isPaintInfoFocus = true;
             GameScreen.ObjFocus = best;
