@@ -8,6 +8,7 @@ on:
       - 'sources/GameScreen/LyMeowzMapReader.java'
       - 'sources/GameScreen/LyMeowzNpcMapRegistry.java'
       - 'sources/GameScreen/LyMeowzMapTransitions.java'
+      - 'sources/netcommand/global/ReadMessenge.java'
       - '.github/workflows/lymeowz-main-smoke.yml'
   workflow_dispatch:
 permissions:
@@ -51,7 +52,8 @@ jobs:
             sources/GameObjects/Player.java \
             sources/GameScreen/LyMeowzMapReader.java \
             sources/GameScreen/LyMeowzNpcMapRegistry.java \
-            sources/GameScreen/LyMeowzMapTransitions.java 2>&1 | tee build/smoke-compile.log
+            sources/GameScreen/LyMeowzMapTransitions.java \
+            sources/netcommand/global/ReadMessenge.java 2>&1 | tee build/smoke-compile.log
           test -f build/smoke/GameScreen/GameScreen.class
           test -f build/smoke/GameObjects/Player.class
           test -f build/smoke/GameScreen/LyMeowzMapReader.class
