@@ -28,6 +28,7 @@ roots = [
   'sources/GameScreen/LyMeowzWorldStore.java',
   'sources/GameScreen/LyMeowzAIDirector.java',
   'sources/GameScreen/LyMeowzDiagnostics.java',
+  'sources/GameScreen/LyMeowzTrainingPlanner.java',
   'sources/GameScreen/LyMeowzRecovery.java',
   'sources/GameObjects/Player.java',
   'sources/GameObjects/MainQuest.java',
