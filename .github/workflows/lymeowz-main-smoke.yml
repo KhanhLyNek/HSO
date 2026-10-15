@@ -22,6 +22,7 @@ on:
       - 'tests/LyMeowzTrainingTest.java'
       - 'sources/GameObjects/MainQuest.java'
       - 'tests/LyMeowzDirectorTest.java'
+      - 'tests/LyMeowzMountCrashTest.java'
       - '.github/workflows/lymeowz-main-smoke.yml'
   workflow_dispatch:
 permissions:
@@ -100,6 +101,8 @@ jobs:
             sources/Main/ChildLocationDiagnostics.java 2>&1 | tee build/smoke-compile.log
           test -f build/smoke/GameScreen/GameScreen.class
           test -f build/smoke/GameObjects/Player.class
+          test -f build/smoke/GameObjects/MainObject.class
+          test -f build/smoke/GameObjects/MountTemplate.class
           test -f build/smoke/GameObjects/NPC.class
           test -f build/smoke/GameScreen/LyMeowzMapReader.class
       - name: Test obstacle routing and unreachable goals
@@ -142,6 +145,11 @@ jobs:
           set -euo pipefail
           javac -cp build/smoke -d build/smoke tests/LyMeowzTrainingTest.java
           java -cp build/smoke LyMeowzTrainingTest
+      - name: Reproduce remote-player missing mount animation crash
+        run: |
+          set -euo pipefail
+          javac -cp build/smoke:resources:build/smoke-stubs -d build/smoke tests/LyMeowzMountCrashTest.java
+          java -cp build/smoke:resources:build/smoke-stubs LyMeowzMountCrashTest
       - name: Upload compile output
         if: always()
         uses: actions/upload-artifact@v4
