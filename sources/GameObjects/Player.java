@@ -712,7 +712,7 @@ public class Player extends MainObject {
             if (best == null ||
                     (questTarget && !bestIsQuest) ||
                     (questTarget == bestIsQuest && (distance + nearbyPlayers * crowdPenalty < bestDistance + bestCrowding * crowdPenalty ||
-                    (distance + nearbyPlayers * crowdPenalty == bestDistance + bestCrowding * crowdPenalty && distance < bestDistance))) {
+                    (distance + nearbyPlayers * crowdPenalty == bestDistance + bestCrowding * crowdPenalty && distance < bestDistance)))) {
                 best = mob;
                 bestDistance = distance;
                 bestCrowding = nearbyPlayers;
