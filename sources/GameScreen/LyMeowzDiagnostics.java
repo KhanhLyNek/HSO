@@ -27,7 +27,8 @@ public final class LyMeowzDiagnostics {
     public void event(String message) {
         if (message == null) return;
         if (message.length() > 90) message = message.substring(0, 90);
-        events[nextEvent] = message;
+        long minutes = startedAt > 0 ? (System.currentTimeMillis() - startedAt) / 60000L : 0L;
+        events[nextEvent] = "[" + minutes + "m] " + message;
         nextEvent = (nextEvent + 1) % LOG_LIMIT;
         if (eventCount < LOG_LIMIT) eventCount++;
     }
@@ -60,9 +61,15 @@ public final class LyMeowzDiagnostics {
     public int questKills() { return questKills; }
     public int deaths() { return deaths; }
 
+    /** Offset 0 is newest; recent events survive only for the active session. */
+    public String recentEvent(int offset) {
+        if (offset < 0 || offset >= eventCount) return null;
+        return events[(nextEvent + LOG_LIMIT - 1 - offset) % LOG_LIMIT];
+    }
+
     public String latestEvent() {
-        if (eventCount == 0) return "Chua co su kien";
-        return events[(nextEvent + LOG_LIMIT - 1) % LOG_LIMIT];
+        String latest = recentEvent(0);
+        return latest == null ? "Chua co su kien" : latest;
     }
 
     public String summary(long now) {
