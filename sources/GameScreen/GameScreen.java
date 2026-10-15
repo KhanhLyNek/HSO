@@ -1460,10 +1460,22 @@ public class GameScreen extends MainScreen {
         int i7 = i2 - this.yStart;
         int i8 = i3 - this.xStart;
         int i9 = i4 - this.yStart;
+        // The pathfinder operates on a minimap window, not the whole world.
+        // Reject out-of-window coordinates before indexing the collision grid.
+        if (GameCanvas.loadmap == null || GameCanvas.loadmap.mapFind == null ||
+                GameCanvas.loadmap.mapFind.length == 0 ||
+                GameCanvas.loadmap.mapFind[0] == null ||
+                GameCanvas.loadmap.mapType == null ||
+                i6 < 0 || i6 >= GameCanvas.loadmap.mapFind.length ||
+                i7 < 0 || i7 >= GameCanvas.loadmap.mapFind[0].length ||
+                i8 < 0 || i8 >= GameCanvas.loadmap.mapFind.length ||
+                i9 < 0 || i9 >= GameCanvas.loadmap.mapFind[0].length) {
+            return new short[i5 + 1];
+        }
         for (int i10 = 0; i10 < GameCanvas.loadmap.mapFind.length; i10++) {
             for (int i11 = 0; i11 < GameCanvas.loadmap.mapFind[i10].length; i11++) {
                 int i12 = ((this.yStart + i11) * GameCanvas.loadmap.mapW) + this.xStart + i10;
-                if (i12 < GameCanvas.loadmap.mapType.length - 1) {
+                if (i12 >= 0 && i12 < GameCanvas.loadmap.mapType.length) {
                     if (GameCanvas.loadmap.mapType[i12] == 1 || GameCanvas.loadmap.mapType[i12] == -1) {
                         GameCanvas.loadmap.mapFind[i10][i11] = -1;
                     } else {
