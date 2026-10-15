@@ -422,7 +422,7 @@ public class GameScreen extends MainScreen {
      * Follow the native Player.posTransRoad consumer in small forward segments.
      * Map collision comes from actual server-loaded tiles, not guessed map adjacency.
      */
-    private boolean lyMeowzQuestMoveTo(int destX, int destY) {
+    private boolean lyMeowzQuestMoveTo(int destX, int destY, boolean allowNearby) {
         if (GameCanvas.loadmap == null || GameCanvas.loadmap.mapType == null ||
                 LoadMap.wTile <= 0 || player == null || !player.Canmove()) return false;
         int sx = player.x / LoadMap.wTile;
@@ -432,6 +432,29 @@ public class GameScreen extends MainScreen {
         short[] route = LyMeowzMapReader.route(GameCanvas.loadmap.mapType,
                 GameCanvas.loadmap.mapW, GameCanvas.loadmap.mapH,
                 sx, sy, dx, dy, 512);
+        if (route.length == 0 && (sx != dx || sy != dy) && allowNearby) {
+            // NPCs can occupy collision-blocked tiles. Reach a walkable adjacent
+            // tile within interaction distance instead of walking into the NPC.
+            int[] ox = {0, 1, -1, 0, 1, -1, 1, -1};
+            int[] oy = {-1, 0, 0, 1, -1, -1, 1, 1};
+            for (int radius = 1; radius <= 2 && route.length == 0; radius++) {
+                for (int j = 0; j < ox.length && route.length == 0; j++) {
+                    int candidateX = dx + ox[j] * radius;
+                    int candidateY = dy + oy[j] * radius;
+                    if (sx == candidateX && sy == candidateY) {
+                        // Already within a tile of the NPC; next update handles interaction.
+                        return false;
+                    }
+                    route = LyMeowzMapReader.route(GameCanvas.loadmap.mapType,
+                            GameCanvas.loadmap.mapW, GameCanvas.loadmap.mapH,
+                            sx, sy, candidateX, candidateY, 512);
+                    if (route.length > 0) {
+                        destX = candidateX * LoadMap.wTile + LoadMap.wTile / 2;
+                        destY = candidateY * LoadMap.wTile + LoadMap.wTile / 2;
+                    }
+                }
+            }
+        }
         if (route.length == 0) {
             // A destination in the current tile still needs an exact-position move.
             if (sx != dx || sy != dy) return false;
@@ -506,7 +529,7 @@ public class GameScreen extends MainScreen {
                 stopLyMeowzQuestTravel(null);
                 ((GameObjects.NPC) npc).NhiemVu();
                 GameCanvas.addInfoChar("LyMeowz: Da den NPC, chon nhiem vu de tra.");
-            } else if (!lyMeowzQuestMoveTo(npc.x, npc.y)) {
+            } else if (!lyMeowzQuestMoveTo(npc.x, npc.y, true)) {
                 stopLyMeowzQuestTravel("LyMeowz: Khong tim duoc duong den NPC tren map nay.");
             }
             return;
@@ -553,7 +576,7 @@ public class GameScreen extends MainScreen {
             stopLyMeowzQuestTravel("LyMeowz: Cong khong chuyen map, dung de tranh lap.");
             return;
         }
-        if (!lyMeowzQuestMoveTo(gate.x, gate.y)) {
+        if (!lyMeowzQuestMoveTo(gate.x, gate.y, false)) {
             stopLyMeowzQuestTravel("LyMeowz: Khong tim duoc duong den cong.");
         }
     }
