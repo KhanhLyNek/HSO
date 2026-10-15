@@ -660,7 +660,7 @@ public class ReadMessenge extends AvMain {
             byte readByte6 = message.reader().readByte();
             short readShort5 = message.reader().readShort();
             MainObject mainObject = MainObject.get_Object(readShort, (byte) 0);
-            if (mainObject == 0 || mainObject.isRemove) {
+            if (mainObject == null || mainObject.isRemove) {
                 return;
             }
             if (readByte2 == -126 && lowerCase.endsWith(",")) {
@@ -2029,7 +2029,7 @@ public class ReadMessenge extends AvMain {
                 MainMonster.VecCatalogyMonSter.addElement(new CatalogyMonster(message.reader().readShort(), (short) message.reader().readUnsignedByte(), message.reader().readInt(), message.reader().readByte(), message.reader().readUTF()));
             }
             int readByte = message.reader().readByte();
-            MountTemplate.FRAME_VE_TRUOC = new byte[readByte];
+            MountTemplate.FRAME_VE_TRUOC = new byte[readByte][];
             for (int i = 0; i < readByte; i++) {
                 int readByte2 = message.reader().readByte();
                 MountTemplate.FRAME_VE_TRUOC[i] = new byte[readByte2];
@@ -2038,7 +2038,7 @@ public class ReadMessenge extends AvMain {
                 }
             }
             int readByte3 = message.reader().readByte();
-            MountTemplate.DY_CHAR_STAND = new byte[readByte3];
+            MountTemplate.DY_CHAR_STAND = new byte[readByte3][];
             for (int i3 = 0; i3 < readByte3; i3++) {
                 int readByte4 = message.reader().readByte();
                 MountTemplate.DY_CHAR_STAND[i3] = new byte[readByte4];
@@ -2047,7 +2047,7 @@ public class ReadMessenge extends AvMain {
                 }
             }
             int readByte5 = message.reader().readByte();
-            MountTemplate.DY_CHAR_MOVE = new byte[readByte5];
+            MountTemplate.DY_CHAR_MOVE = new byte[readByte5][];
             for (int i5 = 0; i5 < readByte5; i5++) {
                 int readByte6 = message.reader().readByte();
                 MountTemplate.DY_CHAR_MOVE[i5] = new byte[readByte6];
@@ -2056,7 +2056,7 @@ public class ReadMessenge extends AvMain {
                 }
             }
             int readByte7 = message.reader().readByte();
-            MountTemplate.dx = new byte[readByte7];
+            MountTemplate.dx = new byte[readByte7][];
             for (int i7 = 0; i7 < readByte7; i7++) {
                 int readByte8 = message.reader().readByte();
                 MountTemplate.dx[i7] = new byte[readByte8];
@@ -2065,7 +2065,7 @@ public class ReadMessenge extends AvMain {
                 }
             }
             int readByte9 = message.reader().readByte();
-            MountTemplate.dy = new byte[readByte9];
+            MountTemplate.dy = new byte[readByte9][];
             for (int i9 = 0; i9 < readByte9; i9++) {
                 int readByte10 = message.reader().readByte();
                 MountTemplate.dy[i9] = new byte[readByte10];
@@ -2074,7 +2074,7 @@ public class ReadMessenge extends AvMain {
                 }
             }
             int readByte11 = message.reader().readByte();
-            MountTemplate.FRAME_MOVE_LR = new byte[readByte11];
+            MountTemplate.FRAME_MOVE_LR = new byte[readByte11][];
             for (int i11 = 0; i11 < readByte11; i11++) {
                 int readByte12 = message.reader().readByte();
                 MountTemplate.FRAME_MOVE_LR[i11] = new byte[readByte12];
@@ -2083,7 +2083,7 @@ public class ReadMessenge extends AvMain {
                 }
             }
             int readByte13 = message.reader().readByte();
-            MountTemplate.FRAME_MOVE_DOWN = new byte[readByte13];
+            MountTemplate.FRAME_MOVE_DOWN = new byte[readByte13][];
             for (int i13 = 0; i13 < readByte13; i13++) {
                 int readByte14 = message.reader().readByte();
                 MountTemplate.FRAME_MOVE_DOWN[i13] = new byte[readByte14];
@@ -2092,7 +2092,7 @@ public class ReadMessenge extends AvMain {
                 }
             }
             int readByte15 = message.reader().readByte();
-            MountTemplate.FRAME_MOVE_UP = new byte[readByte15];
+            MountTemplate.FRAME_MOVE_UP = new byte[readByte15][];
             for (int i15 = 0; i15 < readByte15; i15++) {
                 int readByte16 = message.reader().readByte();
                 MountTemplate.FRAME_MOVE_UP[i15] = new byte[readByte16];
@@ -2174,7 +2174,7 @@ public class ReadMessenge extends AvMain {
             }
             try {
                 int readShort3 = message.reader().readShort();
-                bArr = new byte[readShort3];
+                bArr = new byte[readShort3][];
                 for (int i25 = 0; i25 < readShort3; i25++) {
                     int readByte26 = message.reader().readByte();
                     bArr[i25] = new byte[readByte26];
@@ -2937,7 +2937,7 @@ public class ReadMessenge extends AvMain {
                 MainParty mainParty = null;
                 int readByte2 = message.reader().readByte();
                 for (int i = 0; i < readByte2; i++) {
-                    if (i == false) {
+                    if (i == 0) {
                         mainParty = new MainParty(message.reader().readUTF(), message.reader().readShort(), message.reader().readUnsignedByte(), message.reader().readByte());
                     } else {
                         mainParty.addObjParty(message.reader().readUTF(), message.reader().readShort(), message.reader().readUnsignedByte(), message.reader().readByte());
