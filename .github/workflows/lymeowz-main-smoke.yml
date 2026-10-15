@@ -46,14 +46,28 @@ jobs:
       - name: Compile changed game sources against original class resources
         run: |
           set -euo pipefail
-          mkdir -p build/smoke
-          javac -encoding UTF-8 -cp resources -d build/smoke \
+          mkdir -p build/smoke build/smoke-stubs build/stub-src/javax/microedition/midlet
+          # This stub is used solely to verify JVM compilation of decompiled sources.
+          # It is NOT a substitute for MIDP/CLDC libraries in a runnable J2ME JAR.
+          cat > build/stub-src/javax/microedition/midlet/MIDlet.java <<'EOF'
+          package javax.microedition.midlet;
+          public abstract class MIDlet {
+            protected MIDlet() {}
+            protected abstract void startApp() throws Exception;
+            protected abstract void pauseApp();
+            protected abstract void destroyApp(boolean unconditional) throws Exception;
+            public final void notifyDestroyed() {}
+          }
+          EOF
+          javac -d build/smoke-stubs build/stub-src/javax/microedition/midlet/MIDlet.java
+          javac -encoding UTF-8 -cp resources:build/smoke-stubs -d build/smoke \
             sources/GameScreen/GameScreen.java \
             sources/GameObjects/Player.java \
             sources/GameScreen/LyMeowzMapReader.java \
             sources/GameScreen/LyMeowzNpcMapRegistry.java \
             sources/GameScreen/LyMeowzMapTransitions.java \
-            sources/netcommand/global/ReadMessenge.java 2>&1 | tee build/smoke-compile.log
+            sources/netcommand/global/ReadMessenge.java \
+            sources/Main/ChildLocationDiagnostics.java 2>&1 | tee build/smoke-compile.log
           test -f build/smoke/GameScreen/GameScreen.class
           test -f build/smoke/GameObjects/Player.class
           test -f build/smoke/GameScreen/LyMeowzMapReader.class
