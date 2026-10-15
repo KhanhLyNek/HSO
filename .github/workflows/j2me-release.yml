@@ -7,6 +7,8 @@ on:
       - '.github/workflows/j2me-release.yml'
       - 'sources/GameScreen/**'
       - 'sources/GameObjects/Player.java'
+      - 'sources/GameObjects/MainObject.java'
+      - 'sources/GameObjects/MountTemplate.java'
       - 'sources/GameObjects/MainQuest.java'
       - 'sources/GameObjects/NPC.java'
       - 'sources/netcommand/global/ReadMessenge.java'
