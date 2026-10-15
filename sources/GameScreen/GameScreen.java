@@ -385,7 +385,12 @@ public class GameScreen extends MainScreen {
                     if (npc != null) {
                         ObjFocus = npc;
                         PaintInfoGameScreen.isPaintInfoFocus = true;
-                        GameCanvas.addInfoChar("LyMeowz: Da danh dau NPC tra nhiem vu. Hay den gan va tuong tac.");
+                        if (MainObject.getDistance(player.x, player.y, npc.x, npc.y) <= 100 && npc instanceof GameObjects.NPC) {
+                            ((GameObjects.NPC) npc).GiaoTiep();
+                            GameCanvas.addInfoChar("LyMeowz: Da mo tuong tac NPC. Chon nhiem vu de tra.");
+                        } else {
+                            GameCanvas.addInfoChar("LyMeowz: Da danh dau NPC. Den gan NPC roi bam lai de tuong tac.");
+                        }
                     } else {
                         GameCanvas.addInfoChar("LyMeowz: NPC tra nhiem vu khong o map hien tai (ID " + questNpcId + ").");
                     }
