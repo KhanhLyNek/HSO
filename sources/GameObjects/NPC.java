@@ -30,25 +30,25 @@ public class NPC extends MainObject {
     public void commandPointer(int i, int i2) {
         switch (i) {
             case 0:
-                if (i2 >= 0 && i2 <= MainQuest.vecQuestList.size()) {
+                if (i2 >= 0 && i2 < MainQuest.vecQuestList.size()) {
                     ((MainQuest) MainQuest.vecQuestList.elementAt(i2)).beginQuest();
                     break;
                 }
                 break;
             case 1:
-                if (i2 >= 0 && i2 <= MainQuest.vecQuestFinish.size()) {
+                if (i2 >= 0 && i2 < MainQuest.vecQuestFinish.size()) {
                     ((MainQuest) MainQuest.vecQuestFinish.elementAt(i2)).beginQuest();
                     break;
                 }
                 break;
             case 2:
-                if (i2 >= 0 && i2 <= MainQuest.vecQuestDoing_Main.size()) {
+                if (i2 >= 0 && i2 < MainQuest.vecQuestDoing_Main.size()) {
                     ((MainQuest) MainQuest.vecQuestDoing_Main.elementAt(i2)).show_Info_Quest_Doing();
                     break;
                 }
                 break;
             case 3:
-                if (i2 >= 0 && i2 <= MainQuest.vecQuestDoing_Sub.size()) {
+                if (i2 >= 0 && i2 < MainQuest.vecQuestDoing_Sub.size()) {
                     ((MainQuest) MainQuest.vecQuestDoing_Sub.elementAt(i2)).show_Info_Quest_Doing();
                     break;
                 }
