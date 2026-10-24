@@ -1,0 +1,47 @@
+name: Unpack and decompile KnightOnline JAR
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - KnightOnline_v403.jar
+      - tools/decompile.sh
+      - .github/workflows/decompile.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: knight-decompile-main
+  cancel-in-progress: false
+
+jobs:
+  decompile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Extract and decompile
+        run: bash tools/decompile.sh
+      - name: Commit extracted files and source on main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add extracted decompiled-src DECOMPILE_REPORT.md
+          if git diff --cached --quiet; then
+            echo "No generated changes."
+            exit 0
+          fi
+          git commit -m "Decompile KnightOnline v4.0.3 JAR into Java sources and assets"
+          git push origin HEAD:main
