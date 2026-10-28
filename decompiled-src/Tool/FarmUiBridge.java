@@ -56,6 +56,14 @@ public final class FarmUiBridge {
         }
         GameScreen.ObjFocus = nearest;
         PaintInfoGameScreen.isPaintInfoFocus = nearest != null;
+        // Keep the original nextMonster() bookkeeping: without this, native
+        // auto-fire may believe every search is unsuccessful and move away
+        // from the saved center even when a matching monster was acquired.
+        if (nearest != null) {
+            Player.demUnFire = 0;
+        } else if (Player.demUnFire < 100) {
+            Player.demUnFire = (short)(Player.demUnFire + 1);
+        }
         return true;
     }
 }
