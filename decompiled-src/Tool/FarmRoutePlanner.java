@@ -19,7 +19,7 @@ public final class FarmRoutePlanner {
     private FarmRoutePlanner() {}
 
     /** Minimum directed transfers from each map to destination. */
-    public static int[] distancesTo(int destMap, boolean[] blockedStones) {
+    public static int[] distancesTo(int destMap, boolean[] blockedStones, boolean[] blockedGates) {
         int[] d = new int[MAX_MAPS];
         int[] q = new int[MAX_MAPS];
         for (int i = 0; i < d.length; i++) d[i] = -1;
@@ -31,6 +31,7 @@ public final class FarmRoutePlanner {
             int cur = q[head++];
             for (int i = 0; i < FarmWorldData.EXITS.length; i++) {
                 int[] a = FarmWorldData.EXITS[i];
+                if (blockedGates != null && blockedGates[i]) continue;
                 if (a[1] != cur || !valid(a[0]) || d[a[0]] != -1) continue;
                 d[a[0]] = d[cur] + 1;
                 q[tail++] = a[0];
@@ -46,7 +47,7 @@ public final class FarmRoutePlanner {
         return d;
     }
 
-    public static int[] distancesFrom(int from, boolean[] blockedStones) {
+    public static int[] distancesFrom(int from, boolean[] blockedStones, boolean[] blockedGates) {
         int[] d = new int[MAX_MAPS];
         int[] q = new int[MAX_MAPS];
         for (int i = 0; i < d.length; i++) d[i] = -1;
@@ -58,6 +59,7 @@ public final class FarmRoutePlanner {
             int cur = q[head++];
             for (int i = 0; i < FarmWorldData.EXITS.length; i++) {
                 int[] a = FarmWorldData.EXITS[i];
+                if (blockedGates != null && blockedGates[i]) continue;
                 if (a[0] != cur || !valid(a[1]) || d[a[1]] != -1) continue;
                 d[a[1]] = d[cur] + 1;
                 q[tail++] = a[1];
@@ -75,8 +77,8 @@ public final class FarmRoutePlanner {
 
     /** Returns [kind, rowIndex] or null. */
     public static int[] next(int current, int target, int playerX, int playerY,
-                             boolean[] blockedStones) {
-        int[] d = distancesTo(target, blockedStones);
+                             boolean[] blockedStones, boolean[] blockedGates) {
+        int[] d = distancesTo(target, blockedStones, blockedGates);
         if (!valid(current) || d[current] < 1) return null;
         int[] localWalkDistances = tileDistances(playerX, playerY);
         int bestKind = -1, bestIndex = -1;
@@ -84,6 +86,7 @@ public final class FarmRoutePlanner {
         for (int i = 0; i < FarmWorldData.EXITS.length; i++) {
             int[] a = FarmWorldData.EXITS[i];
             if (a[0] != current || !valid(a[1]) || d[a[1]] < 0 ||
+                    blockedGates != null && blockedGates[i] ||
                     !portalVisible(a[2], a[3])) continue;
             int hops = d[a[1]] + 1;
             int walk = walkCost(localWalkDistances, a[2], a[3]);
