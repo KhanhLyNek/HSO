@@ -56,7 +56,7 @@ import Model.Point;
 import Model.T;
 import Thread_More.LoadMap;
 import Thread_More.MiniMap;
-import Tool.AutoMobNavigator;
+import Tool.AutoFarmController;
 import netcommand.global.GlobalService;
 
 public class GameScreen
@@ -94,7 +94,7 @@ extends MainScreen {
     public iCommand cmdBuy_Sell;
     public iCommand cmdSetWeather;
     public iCommand cmdChangeMap;
-    public iCommand cmdAutoMoveDog;
+    public iCommand cmdAutoFarm;
     public iCommand cmdChucNang;
     public iCommand cmdListFriend;
     public iCommand cmdAutoFire;
@@ -204,7 +204,7 @@ extends MainScreen {
         this.cmdSetPk = new iCommand(T.setPk, 8, this);
         this.cmdSetDoSat = new iCommand(T.dosat, 10, this);
         this.cmdChangeMap = new iCommand(T.changeArea, 12, this);
-        this.cmdAutoMoveDog = new iCommand("Auto den bai Cho dien", 32, this);
+        this.cmdAutoFarm = new iCommand("Bat Auto Farm", 32, this);
         this.cmdListFriend = new iCommand(T.listFriend, 15, this);
         this.cmdAutoFire = new iCommand(T.autoFire, 16, this);
         this.cmdEndHelp = new iCommand(T.endHelp, 17, this);
@@ -532,7 +532,7 @@ extends MainScreen {
                 break;
             }
             case 32: {
-                AutoMobNavigator.toggle();
+                AutoFarmController.toggle();
                 break;
             }
         }
@@ -895,7 +895,7 @@ extends MainScreen {
 
     public void update() {
         try {
-            AutoMobNavigator.tick();
+            AutoFarmController.tick();
             Object object;
             Object object2;
             int n;
@@ -1126,7 +1126,8 @@ extends MainScreen {
             mVector2.addElement(this.cmdGiaotiep);
         }
         mVector2.addElement(this.cmdChangeMap);
-        mVector2.addElement(this.cmdAutoMoveDog);
+        this.cmdAutoFarm.caption = AutoFarmController.isEnabled() ? "Tat Auto Farm" : "Bat Auto Farm";
+        mVector2.addElement(this.cmdAutoFarm);
         GameCanvas.menu2.startAt(mVector2, 2, T.menuChinh, false, null);
         if (help.setStep_Next(1, 9) || help.setStep_Next(6, 2)) {
             Menu2.isHelp = true;
@@ -1150,6 +1151,8 @@ extends MainScreen {
 
     public void doMenuAuto() {
         mVector mVector2 = new mVector("GameScr menu3");
+        this.cmdAutoFarm.caption = AutoFarmController.isEnabled() ? "Tat Auto Farm" : "Bat Auto Farm";
+        mVector2.addElement(this.cmdAutoFarm);
         GameScreen.gI().cmdAutoFire.caption = Player.isAutoFire > -1 ? T.off + T.autoFire : T.on + T.autoFire;
         mVector2.addElement(GameScreen.gI().cmdAutoFire);
         GameScreen.gI().cmdAutoItem.caption = Player.autoItem != null ? T.off + T.autoItem : T.on + T.autoItem;
