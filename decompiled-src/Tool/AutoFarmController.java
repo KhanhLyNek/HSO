@@ -107,8 +107,16 @@ public final class AutoFarmController {
                         row[0] >= 0 && row[0] < reachable.length &&
                         reachable[row[0]] >= 0) {
                     targetRow = i;
-                    farmAnchorX = remembered[4];
-                    farmAnchorY = remembered[5];
+                    farmAnchorX = -1;
+                    farmAnchorY = -1;
+                    // Only restore a genuine recorded static spawn center.
+                    for (int c = 3; c + 1 < row.length; c += 2) {
+                        if (row[c] == remembered[4] && row[c + 1] == remembered[5]) {
+                            farmAnchorX = remembered[4];
+                            farmAnchorY = remembered[5];
+                            break;
+                        }
+                    }
                     break;
                 }
             }
@@ -188,12 +196,13 @@ public final class AutoFarmController {
         if (!enabled) return;
         Player p = GameScreen.player;
         LoadMap map = GameCanvas.loadmap;
-        if (p == null || map == null ||
-                Session_ME.gI() == null || !Session_ME.gI().isConnected()) {
+        if (Session_ME.gI() == null || !Session_ME.gI().isConnected()) {
             stop("Auto Farm: mat ket noi");
             return;
         }
-        if (!LoadMapScreen.isNextMap) return;
+        // Keep the saved target during map loading or a temporary missing
+        // player object in the death/respawn transition.
+        if (p == null || map == null || !LoadMapScreen.isNextMap) return;
         if (p.Action == 4 || p.hp <= 0) {
             if (!waitingForRevive) {
                 clearMovement();
@@ -428,6 +437,9 @@ public final class AutoFarmController {
         int[] portal = FarmWorldData.EXITS[portalIndex];
         status = "TO_PORTAL";
         if (abs(p.x - portal[2]) < 38 && abs(p.y - portal[3]) < 38) {
+            // Trigger the ordinary server-side portal check using the actual
+            // current player position, not a fabricated destination.
+            GlobalService.gI().player_move((short)p.x, (short)p.y);
             waitingForPortal = true;
             portalWaitingSince = mSystem.currentTimeMillis();
             return true;
@@ -538,6 +550,7 @@ public final class AutoFarmController {
         if (reached(p, gx, gy)) {
             if (mode == 1) {
                 if (bestCenterError <= 60) {
+                    GlobalService.gI().player_move((short)p.x, (short)p.y);
                     waitingForPortal = true;
                     portalWaitingSince = mSystem.currentTimeMillis();
                     return true;
