@@ -195,13 +195,32 @@ public final class AutoFarmController {
         }
         if (!LoadMapScreen.isNextMap) return;
         if (p.Action == 4 || p.hp <= 0) {
-            stop("Auto Farm: nhan vat da guc");
+            if (!waitingForRevive) {
+                clearMovement();
+                disableAttack();
+                farming = false;
+                waitingForPortal = false;
+                stoneStage = 0;
+                waitingForRevive = true;
+                status = "WAIT_REVIVE";
+                info("Auto Farm: da guc, giu bai farm va cho hoi sinh");
+            }
             return;
+        }
+        if (waitingForRevive) {
+            waitingForRevive = false;
+            lastPlanAt = 0L;
+            retryCount = 0;
+            status = "RETURN_TO_FARM";
+            info("Auto Farm: da hoi sinh, quay lai bai farm da luu");
         }
         if (p.Lv != selectedLevel) {
             clearMovement();
             disableAttack();
             targetRow = -1;
+            farmAnchorX = -1;
+            farmAnchorY = -1;
+            FarmMemory.clear(p.ID);
             selectedLevel = p.Lv;
             retryCount = 0;
             waitingForPortal = false;
@@ -217,6 +236,8 @@ public final class AutoFarmController {
             disableAttack();
             observedMap = currentMap;
             waitingForPortal = false;
+            stoneStage = 0;
+            stoneRouteIndex = -1;
             farming = false;
             retryCount = 0;
             status = "MAP_CHANGED";
@@ -245,6 +266,35 @@ public final class AutoFarmController {
         }
 
         long now = mSystem.currentTimeMillis();
+        if (stoneStage != 0) {
+            if (stoneRouteIndex < 0 ||
+                    stoneRouteIndex >= FarmTeleportData.ROUTES.length ||
+                    now - stoneStageAt > STONE_TIMEOUT_MS) {
+                if (stoneRouteIndex >= 0 && stoneRouteIndex < disabledStoneRoutes.length)
+                    disabledStoneRoutes[stoneRouteIndex] = true;
+                stoneStage = 0;
+                stoneRouteIndex = -1;
+                lastPlanAt = 0L;
+                status = "STONE_REPLAN";
+                info("Auto Farm: da khong phan hoi, tim duong khac");
+            } else {
+                if (stoneStage == 1 && now - stoneStageAt >= STONE_MENU_DELAY_MS) {
+                    int[] stone = FarmTeleportData.ROUTES[stoneRouteIndex];
+                    if (!FarmRoutePlanner.npcVisible(stone[1], stone[2], stone[3])) {
+                        disabledStoneRoutes[stoneRouteIndex] = true;
+                        stoneStage = 0;
+                        stoneRouteIndex = -1;
+                    } else {
+                        GlobalService.gI().Dynamic_Menu((short)stone[1], (byte)0,
+                                (byte)stone[4]);
+                        stoneStage = 2;
+                        stoneStageAt = now;
+                        status = "STONE_WARP_WAIT";
+                    }
+                }
+                return;
+            }
+        }
         if (waitingForPortal) {
             if (now - portalWaitingSince > PORTAL_TIMEOUT_MS) {
                 stop("Auto Farm: cong map khong phan hoi");
@@ -295,7 +345,7 @@ public final class AutoFarmController {
     }
 
     private static boolean chooseTarget(int level, int currentMap) {
-        int[] hops = mapDistances(currentMap);
+        int[] hops = FarmRoutePlanner.distancesFrom(currentMap, disabledStoneRoutes);
         int best = -1;
         int bestGap = 99999;
         int bestHops = 99999;
