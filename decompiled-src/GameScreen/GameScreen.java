@@ -56,6 +56,7 @@ import Model.Point;
 import Model.T;
 import Thread_More.LoadMap;
 import Thread_More.MiniMap;
+import Tool.AutoMobNavigator;
 import netcommand.global.GlobalService;
 
 public class GameScreen
@@ -93,6 +94,7 @@ extends MainScreen {
     public iCommand cmdBuy_Sell;
     public iCommand cmdSetWeather;
     public iCommand cmdChangeMap;
+    public iCommand cmdAutoMoveDog;
     public iCommand cmdChucNang;
     public iCommand cmdListFriend;
     public iCommand cmdAutoFire;
@@ -202,6 +204,7 @@ extends MainScreen {
         this.cmdSetPk = new iCommand(T.setPk, 8, this);
         this.cmdSetDoSat = new iCommand(T.dosat, 10, this);
         this.cmdChangeMap = new iCommand(T.changeArea, 12, this);
+        this.cmdAutoMoveDog = new iCommand("Auto den bai Cho dien", 32, this);
         this.cmdListFriend = new iCommand(T.listFriend, 15, this);
         this.cmdAutoFire = new iCommand(T.autoFire, 16, this);
         this.cmdEndHelp = new iCommand(T.endHelp, 17, this);
@@ -526,6 +529,11 @@ extends MainScreen {
             case 31: {
                 if (ObjFocus == null || !ObjFocus.isMiNuong()) break;
                 GlobalService.gI().RequestInfo_MiNuong((byte)0, (short)(GameScreen.ObjFocus.ID + 1000));
+                break;
+            }
+            case 32: {
+                AutoMobNavigator.toggle();
+                break;
             }
         }
         super.commandPointer(n, n2);
@@ -887,6 +895,7 @@ extends MainScreen {
 
     public void update() {
         try {
+            AutoMobNavigator.tick();
             Object object;
             Object object2;
             int n;
@@ -1117,6 +1126,7 @@ extends MainScreen {
             mVector2.addElement(this.cmdGiaotiep);
         }
         mVector2.addElement(this.cmdChangeMap);
+        mVector2.addElement(this.cmdAutoMoveDog);
         GameCanvas.menu2.startAt(mVector2, 2, T.menuChinh, false, null);
         if (help.setStep_Next(1, 9) || help.setStep_Next(6, 2)) {
             Menu2.isHelp = true;
