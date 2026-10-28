@@ -33,7 +33,7 @@ public final class AutoFarmController {
     private static final long STALL_TIMEOUT_MS = 3500L;
     private static final long PORTAL_TIMEOUT_MS = 12000L;
     private static final long STONE_TIMEOUT_MS = 8000L;
-    private static final long STONE_MENU_DELAY_MS = 350L;
+    private static final long STONE_MENU_DELAY_MS = 100L;
     private static final long ROUTE_REPLAN_DELAY_MS = 400L;
 
     private static boolean enabled;
@@ -56,6 +56,14 @@ public final class AutoFarmController {
     private static int farmAnchorX = -1;
     private static int farmAnchorY = -1;
     private static int stoneStage;
+    private static boolean stoneMenuReady;
+    private static int gateInProgress = -1;
+    private static int portalRecoveryGate = -1;
+    // 0=none, 1=walk away to arm normal server portal movement, 2=return to gate
+    private static int portalRecoveryStage;
+    private static final byte[] gateFailures = new byte[FarmWorldData.EXITS.length];
+    private static final boolean[] disabledGates =
+            new boolean[FarmWorldData.EXITS.length];
     private static int stoneRouteIndex = -1;
     private static long stoneStageAt;
     private static final boolean[] disabledStoneRoutes =
@@ -90,16 +98,24 @@ public final class AutoFarmController {
         waitingForPortal = false;
         waitingForRevive = false;
         stoneStage = 0;
+        stoneMenuReady = false;
         stoneRouteIndex = -1;
+        gateInProgress = -1;
+        portalRecoveryGate = -1;
+        portalRecoveryStage = 0;
         targetRow = -1;
         farmAnchorX = -1;
         farmAnchorY = -1;
         selectedLevel = p.Lv;
         observedMap = GameCanvas.loadmap.idMap;
         for (int i = 0; i < disabledStoneRoutes.length; i++) disabledStoneRoutes[i] = false;
+        for (int i = 0; i < disabledGates.length; i++) {
+            disabledGates[i] = false;
+            gateFailures[i] = 0;
+        }
         int[] remembered = FarmMemory.load(p.ID);
         if (remembered != null && remembered[0] == p.Lv) {
-            int[] reachable = FarmRoutePlanner.distancesFrom(observedMap, disabledStoneRoutes);
+            int[] reachable = FarmRoutePlanner.distancesFrom(observedMap, disabledStoneRoutes, disabledGates);
             for (int i = 0; i < FarmWorldData.MOBS.length; i++) {
                 int[] row = FarmWorldData.MOBS[i];
                 if (row[0] == remembered[1] && row[1] == remembered[2] &&
@@ -140,7 +156,11 @@ public final class AutoFarmController {
         waitingForPortal = false;
         waitingForRevive = false;
         stoneStage = 0;
+        stoneMenuReady = false;
         stoneRouteIndex = -1;
+        gateInProgress = -1;
+        portalRecoveryGate = -1;
+        portalRecoveryStage = 0;
         targetRow = -1;
         farmAnchorX = -1;
         farmAnchorY = -1;
@@ -158,6 +178,18 @@ public final class AutoFarmController {
 
     public static String getStatus() {
         return status;
+    }
+
+    /** Called only after the ORIGINAL client parsed a real NPC menu response. */
+    public static void onTeleportMenu(int npcId, int entries) {
+        if (!enabled || stoneStage != 1 ||
+                stoneRouteIndex < 0 || stoneRouteIndex >= FarmTeleportData.ROUTES.length)
+            return;
+        int[] expected = FarmTeleportData.ROUTES[stoneRouteIndex];
+        if (npcId == expected[1] && entries > expected[4]) {
+            stoneMenuReady = true;
+            status = "STONE_MENU_READY";
+        }
     }
 
     public static int getTargetMapId() {
@@ -254,7 +286,11 @@ public final class AutoFarmController {
             observedMap = currentMap;
             waitingForPortal = false;
             stoneStage = 0;
+            stoneMenuReady = false;
             stoneRouteIndex = -1;
+            gateInProgress = -1;
+            portalRecoveryGate = -1;
+            portalRecoveryStage = 0;
             farming = false;
             retryCount = 0;
             status = "MAP_CHANGED";
@@ -263,8 +299,6 @@ public final class AutoFarmController {
             stop("Auto Farm: chua co quai phu hop/duong map hop le");
             return;
         }
-        if (Player.isLockKey || p.isBinded) return;
-
         if (farming) {
             if (getTargetMapId() != currentMap) {
                 farming = false;
@@ -287,37 +321,53 @@ public final class AutoFarmController {
             if (stoneRouteIndex < 0 ||
                     stoneRouteIndex >= FarmTeleportData.ROUTES.length ||
                     now - stoneStageAt > STONE_TIMEOUT_MS) {
+                if (stoneMenuReady && GameCanvas.menu2 != null)
+                    GameCanvas.menu2.doCloseMenu();
                 if (stoneRouteIndex >= 0 && stoneRouteIndex < disabledStoneRoutes.length)
                     disabledStoneRoutes[stoneRouteIndex] = true;
                 stoneStage = 0;
+                stoneMenuReady = false;
                 stoneRouteIndex = -1;
                 lastPlanAt = 0L;
                 status = "STONE_REPLAN";
-                info("Auto Farm: da khong phan hoi, tim duong khac");
+                info("Auto Farm: da khong phan hoi, thu tuyen khac");
             } else {
-                if (stoneStage == 1 && now - stoneStageAt >= STONE_MENU_DELAY_MS) {
+                if (stoneStage == 1 && stoneMenuReady &&
+                        now - stoneStageAt >= STONE_MENU_DELAY_MS) {
                     int[] stone = FarmTeleportData.ROUTES[stoneRouteIndex];
-                    if (!FarmRoutePlanner.npcVisible(stone[1], stone[2], stone[3])) {
-                        disabledStoneRoutes[stoneRouteIndex] = true;
-                        stoneStage = 0;
-                        stoneRouteIndex = -1;
-                    } else {
-                        GlobalService.gI().Dynamic_Menu((short)stone[1], (byte)0,
-                                (byte)stone[4]);
-                        stoneStage = 2;
-                        stoneStageAt = now;
-                        status = "STONE_WARP_WAIT";
-                    }
+                    if (GameCanvas.menu2 != null) GameCanvas.menu2.doCloseMenu();
+                    GlobalService.gI().Dynamic_Menu((short)stone[1], (byte)0,
+                            (byte)stone[4]);
+                    stoneStage = 2;
+                    stoneStageAt = now;
+                    status = "STONE_WARP_WAIT";
                 }
                 return;
             }
         }
         if (waitingForPortal) {
             if (now - portalWaitingSince > PORTAL_TIMEOUT_MS) {
-                stop("Auto Farm: cong map khong phan hoi");
+                waitingForPortal = false;
+                lastPlanAt = 0L;
+                if (gateInProgress >= 0 && gateInProgress < disabledGates.length) {
+                    if (gateFailures[gateInProgress]++ == 0) {
+                        portalRecoveryGate = gateInProgress;
+                        portalRecoveryStage = 1;
+                        status = "PORTAL_REARM";
+                        info("Auto Farm: cong chua mo, di ra xa roi vao lai");
+                    } else {
+                        disabledGates[gateInProgress] = true;
+                        portalRecoveryGate = -1;
+                        portalRecoveryStage = 0;
+                        status = "PORTAL_REPLAN";
+                        info("Auto Farm: cong khong phan hoi, doi tuyen");
+                    }
+                }
+                gateInProgress = -1;
             }
             return;
         }
+        if (Player.isLockKey || p.isBinded) return;
 
         if (ownsRoute) {
             if (p.x != lastX || p.y != lastY) {
@@ -372,7 +422,7 @@ public final class AutoFarmController {
     }
 
     private static boolean chooseTarget(int level, int currentMap) {
-        int[] hops = FarmRoutePlanner.distancesFrom(currentMap, disabledStoneRoutes);
+        int[] hops = FarmRoutePlanner.distancesFrom(currentMap, disabledStoneRoutes, disabledGates);
         int best = -1;
         int bestGap = 99999;
         int bestHops = 99999;
@@ -423,6 +473,7 @@ public final class AutoFarmController {
         disableAttack();
         GlobalService.gI().getlist_from_npc((byte)stone[1]);
         stoneStage = 1;
+        stoneMenuReady = false;
         stoneStageAt = mSystem.currentTimeMillis();
         status = "STONE_MENU";
         return true;
