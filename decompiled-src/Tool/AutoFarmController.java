@@ -152,6 +152,10 @@ public final class AutoFarmController {
         return enabled;
     }
 
+    public static boolean isFarming() {
+        return enabled && farming;
+    }
+
     public static String getStatus() {
         return status;
     }
