@@ -97,7 +97,7 @@ with zipfile.ZipFile(original) as a, zipfile.ZipFile(output) as b:
         'MIDlet-Jar-URL: '+jarname,
         'MIDlet-Jar-Size: '+str(size),
     ]
-    with open('dist/HSO_AutoFarm_v403.jad','w',encoding='utf-8',newline='\r\n') as w:
+    with open('dist/HSO_AutoFarm_v403.jad','w',encoding='utf-8',newline='') as w:
         w.write('\r\n'.join(jad)+'\r\n')
 print('Validated:',output,'size:',size,'classfiles: 45.3; preverified StackMap; all original non-class assets retained')
 PY
