@@ -6,7 +6,7 @@ import jdk.internal.org.objectweb.asm.*;
 
 /** Patch original 45.3 MIDlet classes without recompiling CFR-decompiled sources. */
 public final class BuildFarmJar implements Opcodes {
-    private static int updateHooks, paintHooks, commandHooks, menuHooks, mobHooks;
+    private static int updateHooks, paintHooks, commandHooks, menuHooks, mobHooks, npcResponseHooks;
 
     private static byte[] patchScreen(byte[] original) {
         ClassReader reader = new ClassReader(original);
@@ -95,6 +95,44 @@ public final class BuildFarmJar implements Opcodes {
         return writer.toByteArray();
     }
 
+    /**
+     * Observe a real server-supplied dynamic NPC menu.  The npcId is parameter
+     * slot 4 of Menu2.setinfoDynamic(mVector, int, int, int, String).
+     * Do not send a selection before this method has actually rendered the menu.
+     */
+    private static byte[] patchMenu(byte[] original) {
+        ClassReader reader = new ClassReader(original);
+        ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_MAXS);
+        ClassVisitor visitor = new ClassVisitor(ASM8, writer) {
+            @Override public MethodVisitor visitMethod(int access, String name, String desc,
+                    String signature, String[] exceptions) {
+                MethodVisitor target = super.visitMethod(access, name, desc, signature, exceptions);
+                if (target == null || !name.equals("setinfoDynamic") ||
+                        !desc.equals("(LCLib/mVector;IIILjava/lang/String;)V"))
+                    return target;
+                return new MethodVisitor(ASM8, target) {
+                    @Override public void visitInsn(int opcode) {
+                        if (opcode == RETURN) {
+                            npcResponseHooks++;
+                            Label skip = new Label();
+                            super.visitVarInsn(ALOAD, 1);
+                            super.visitJumpInsn(IFNULL, skip);
+                            super.visitVarInsn(ILOAD, 4);
+                            super.visitVarInsn(ALOAD, 1);
+                            super.visitMethodInsn(INVOKEVIRTUAL, "CLib/mVector", "size", "()I", false);
+                            super.visitMethodInsn(INVOKESTATIC, "Tool/AutoFarmController",
+                                    "onTeleportMenu", "(II)V", false);
+                            super.visitLabel(skip);
+                        }
+                        super.visitInsn(opcode);
+                    }
+                };
+            }
+        };
+        reader.accept(visitor, 0);
+        return writer.toByteArray();
+    }
+
     private static byte[] bytes(JarFile jar, JarEntry entry) throws IOException {
         try (InputStream input = jar.getInputStream(entry);
                 ByteArrayOutputStream result = new ByteArrayOutputStream()) {
@@ -111,7 +149,7 @@ public final class BuildFarmJar implements Opcodes {
         Path compiled = Paths.get(args[1]);
         Path output = Paths.get(args[2]);
         Set<String> names = new HashSet<String>();
-        int[] patched = new int[2];
+        int[] patched = new int[3];
         int added = 0;
         Files.createDirectories(output.getParent());
         try (JarFile source = new JarFile(args[0]);
@@ -131,6 +169,9 @@ public final class BuildFarmJar implements Opcodes {
                 } else if (entryName.equals("GameObjects/Player.class")) {
                     data = patchPlayer(data);
                     patched[1]++;
+                } else if (entryName.equals("Model/Menu2.class")) {
+                    data = patchMenu(data);
+                    patched[2]++;
                 }
                 JarEntry newEntry = new JarEntry(entryName);
                 archive.putNextEntry(newEntry);
@@ -157,16 +198,17 @@ public final class BuildFarmJar implements Opcodes {
                 }
             }
         }
-        if (patched[0] != 1 || patched[1] != 1 || updateHooks != 1 ||
-                commandHooks != 1 || paintHooks != 1 || menuHooks < 2 || mobHooks != 1 ||
+        if (patched[0] != 1 || patched[1] != 1 || patched[2] != 1 || updateHooks != 1 ||
+                commandHooks != 1 || paintHooks != 1 || menuHooks < 2 || mobHooks != 1 || npcResponseHooks < 1 ||
                 added < 6)
             throw new IOException("Incomplete patch: originals=" + Arrays.toString(patched) +
                     ", update=" + updateHooks + ", command=" + commandHooks +
                     ", paint=" + paintHooks + ", menu=" + menuHooks +
-                    ", monster=" + mobHooks + ", added=" + added);
-        System.out.println("Patched GameScreen, Player; hooks update=" + updateHooks +
+                    ", monster=" + mobHooks + ", npcMenu=" + npcResponseHooks + ", added=" + added);
+        System.out.println("Patched GameScreen, Player, Menu2; hooks update=" + updateHooks +
                 ", menu=" + menuHooks + ", paint=" + paintHooks +
                 ", command=" + commandHooks + ", mob=" + mobHooks +
+                ", npcMenu=" + npcResponseHooks +
                 "; added CLDC classes=" + added);
         System.out.println("Output: " + output);
     }
