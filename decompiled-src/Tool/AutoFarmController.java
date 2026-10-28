@@ -311,7 +311,7 @@ public final class AutoFarmController {
                 if (Player.isAutoFire != 1) {
                     p.dofire_();
                 }
-                status = "FARMING";
+                status = GameScreen.ObjFocus == null ? "WAIT_MOB" : "FARMING";
                 return;
             }
         }
