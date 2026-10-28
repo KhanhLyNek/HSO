@@ -329,13 +329,23 @@ public final class AutoFarmController {
 
         int targetMap = getTargetMapId();
         if (currentMap != targetMap) {
-            int next = firstHop(currentMap, targetMap);
-            if (next < 0) {
-                stop("Auto Farm: map dich khong the di tu map hien tai");
+            int[] next = FarmRoutePlanner.next(currentMap, targetMap, p.x, p.y,
+                    disabledStoneRoutes);
+            if (next == null) {
+                stop("Auto Farm: khong co cong/da hop le tren map nay");
                 return;
             }
-            if (!navigateToPortal(p, map, next)) {
-                stop("Auto Farm: khong tim duoc duong toi cong map");
+            if (next[0] == FarmRoutePlanner.STONE) {
+                if (!navigateToStone(p, map, next[1])) {
+                    disabledStoneRoutes[next[1]] = true;
+                    lastPlanAt = 0L;
+                    info("Auto Farm: da khong tiep can duoc, tim duong thay the");
+                }
+            } else {
+                int[] gate = FarmWorldData.EXITS[next[1]];
+                if (!navigateToPortal(p, map, gate[1])) {
+                    stop("Auto Farm: khong tim duoc duong toi cong map");
+                }
             }
         } else {
             if (!navigateToSpawn(p, map)) {
@@ -370,47 +380,35 @@ public final class AutoFarmController {
         return true;
     }
 
-    /** Breadth-first search of directed, known map exits. */
-    private static int[] mapDistances(int source) {
-        int[] distances = new int[MAP_LIMIT];
-        int[] queue = new int[MAP_LIMIT];
-        for (int i = 0; i < distances.length; ++i) distances[i] = -1;
-        if (source < 0 || source >= MAP_LIMIT) return distances;
-        int head = 0;
-        int tail = 0;
-        queue[tail++] = source;
-        distances[source] = 0;
-        while (head < tail) {
-            int from = queue[head++];
-            for (int j = 0; j < FarmWorldData.EXITS.length; ++j) {
-                int[] link = FarmWorldData.EXITS[j];
-                int to = link[1];
-                if (link[0] != from || to < 0 || to >= MAP_LIMIT || distances[to] >= 0) continue;
-                distances[to] = distances[from] + 1;
-                queue[tail++] = to;
-            }
+    /** Move toward a source-verified stone, then use the real NPC menu. */
+    private static boolean navigateToStone(Player p, LoadMap map, int rowIndex) {
+        if (rowIndex < 0 || rowIndex >= FarmTeleportData.ROUTES.length) return false;
+        int[] stone = FarmTeleportData.ROUTES[rowIndex];
+        if (stone[0] != map.idMap ||
+                !FarmRoutePlanner.npcVisible(stone[1], stone[2], stone[3])) return false;
+        stoneRouteIndex = rowIndex;
+        status = "TO_STONE";
+        if (abs(p.x - stone[2]) <= 28 && abs(p.y - stone[3]) <= 28) {
+            return beginStoneRequest();
         }
-        return distances;
+        return makeRoute(p, map, new int[][]{{stone[2], stone[3]}}, 2);
     }
 
-    /** Find the first portal along a minimal route from source -> destination. */
-    private static int firstHop(int source, int target) {
-        if (source == target) return source;
-        int[] parents = new int[MAP_LIMIT];
-        int[] distances = mapDistances(source);
-        for (int i = 0; i < parents.length; ++i) parents[i] = -1;
-        if (target < 0 || target >= MAP_LIMIT || distances[target] < 0) return -1;
-        for (int j = 0; j < FarmWorldData.EXITS.length; ++j) {
-            int[] link = FarmWorldData.EXITS[j];
-            if (link[0] >= 0 && link[0] < MAP_LIMIT &&
-                    link[1] >= 0 && link[1] < MAP_LIMIT &&
-                    distances[link[0]] >= 0 &&
-                    distances[link[1]] == distances[link[0]] + 1 &&
-                    parents[link[1]] == -1) parents[link[1]] = link[0];
-        }
-        int step = target;
-        while (parents[step] >= 0 && parents[step] != source) step = parents[step];
-        return parents[step] == source ? step : -1;
+    private static boolean beginStoneRequest() {
+        if (stoneRouteIndex < 0 || stoneRouteIndex >= FarmTeleportData.ROUTES.length)
+            return false;
+        int[] stone = FarmTeleportData.ROUTES[stoneRouteIndex];
+        Player p = GameScreen.player;
+        if (p == null || abs(p.x - stone[2]) > 40 || abs(p.y - stone[3]) > 40 ||
+                !FarmRoutePlanner.npcVisible(stone[1], stone[2], stone[3]))
+            return false;
+        clearMovement();
+        disableAttack();
+        GlobalService.gI().getlist_from_npc((byte)stone[1]);
+        stoneStage = 1;
+        stoneStageAt = mSystem.currentTimeMillis();
+        status = "STONE_MENU";
+        return true;
     }
 
     private static boolean navigateToPortal(Player p, LoadMap map, int nextMap) {
@@ -434,7 +432,7 @@ public final class AutoFarmController {
             portalWaitingSince = mSystem.currentTimeMillis();
             return true;
         }
-        return makeRoute(p, map, new int[][] {{portal[2], portal[3]}}, true);
+        return makeRoute(p, map, new int[][] {{portal[2], portal[3]}}, 1);
     }
 
     private static boolean portalPresent(int x, int y) {
@@ -455,11 +453,13 @@ public final class AutoFarmController {
             centers[i][1] = row[4 + 2 * i];
         }
         status = "TO_SPAWN";
-        return makeRoute(p, map, centers, false);
+        if (farmAnchorX >= 0 && farmAnchorY >= 0)
+            return makeRoute(p, map, new int[][]{{farmAnchorX, farmAnchorY}}, 0);
+        return makeRoute(p, map, centers, 0);
     }
 
     /** Find a reachable center-adjacent walkable tile and route in short chunks. */
-    private static boolean makeRoute(Player p, LoadMap map, int[][] desiredPoints, boolean portal) {
+    private static boolean makeRoute(Player p, LoadMap map, int[][] desiredPoints, int mode) {
         int w = map.mapW;
         int h = map.mapH;
         if (w < 1 || h < 1 || w > 127 || h > 127 ||
@@ -488,6 +488,7 @@ public final class AutoFarmController {
             if (y + 1 < h) tail = visit(curr + w, curr, map.mapType, parent, dist, queue, tail);
         }
 
+        int bestArea = -1;
         int bestIndex = -1;
         int bestDistance = Integer.MAX_VALUE;
         int bestCenterError = Integer.MAX_VALUE;
@@ -506,7 +507,7 @@ public final class AutoFarmController {
                     int cx = xx * TILE + TILE / 2;
                     int cy = yy * TILE + TILE / 2;
                     int err = abs(cx - gx) + abs(cy - gy);
-                    if (portal && (abs(cx - gx) >= 36 || abs(cy - gy) >= 36)) continue;
+                    if (mode != 0 && (abs(cx - gx) >= 36 || abs(cy - gy) >= 36)) continue;
                     // In each cluster, prefer the tile closest to its spawn center.
                     if (err < areaError || err == areaError && dist[idx] < areaDistance) {
                         areaIndex = idx;
@@ -518,18 +519,24 @@ public final class AutoFarmController {
             // Between valid spawn clusters choose the shortest reachable route.
             if (areaIndex >= 0 && (areaDistance < bestDistance ||
                     areaDistance == bestDistance && areaError < bestCenterError)) {
+                bestArea = a;
                 bestIndex = areaIndex;
                 bestDistance = areaDistance;
                 bestCenterError = areaError;
             }
         }
         if (bestIndex < 0) return false;
+        if (mode == 0 && farmAnchorX < 0 && bestArea >= 0) {
+            farmAnchorX = desiredPoints[bestArea][0];
+            farmAnchorY = desiredPoints[bestArea][1];
+            FarmMemory.save(p.ID, new int[]{
+                    p.Lv, getTargetMapId(), getTargetMonsterId(), getTargetMonsterLevel(),
+                    farmAnchorX, farmAnchorY});
+        }
         int gx = (bestIndex % w) * TILE + TILE / 2;
         int gy = (bestIndex / w) * TILE + TILE / 2;
         if (reached(p, gx, gy)) {
-            if (portal) {
-                // The server changes maps when it observes actual movement near
-                // the portal; do not send an arbitrary map-change command.
+            if (mode == 1) {
                 if (bestCenterError <= 60) {
                     waitingForPortal = true;
                     portalWaitingSince = mSystem.currentTimeMillis();
@@ -537,6 +544,7 @@ public final class AutoFarmController {
                 }
                 return false;
             }
+            if (mode == 2) return beginStoneRequest();
             enterFarming(p);
             return true;
         }
