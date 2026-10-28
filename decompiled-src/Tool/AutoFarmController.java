@@ -389,6 +389,9 @@ public final class AutoFarmController {
         for (int a = 0; a < desiredPoints.length; ++a) {
             int gx = desiredPoints[a][0], gy = desiredPoints[a][1];
             int tx = gx / TILE, ty = gy / TILE;
+            int areaIndex = -1;
+            int areaError = Integer.MAX_VALUE;
+            int areaDistance = Integer.MAX_VALUE;
             for (int dy = -SEARCH_RADIUS_TILES; dy <= SEARCH_RADIUS_TILES; ++dy) {
                 for (int dx = -SEARCH_RADIUS_TILES; dx <= SEARCH_RADIUS_TILES; ++dx) {
                     int xx = tx + dx, yy = ty + dy;
@@ -398,21 +401,27 @@ public final class AutoFarmController {
                     int cx = xx * TILE + TILE / 2;
                     int cy = yy * TILE + TILE / 2;
                     int err = abs(cx - gx) + abs(cy - gy);
-                    if (portal && err > 60) continue;
-                    // Shortest reachable bãi first, with center distance as a tiebreaker.
-                    if (dist[idx] < bestDistance ||
-                            dist[idx] == bestDistance && err < bestCenterError) {
-                        bestIndex = idx;
-                        bestDistance = dist[idx];
-                        bestCenterError = err;
+                    if (portal && (abs(cx - gx) >= 36 || abs(cy - gy) >= 36)) continue;
+                    // In each cluster, prefer the tile closest to its spawn center.
+                    if (err < areaError || err == areaError && dist[idx] < areaDistance) {
+                        areaIndex = idx;
+                        areaDistance = dist[idx];
+                        areaError = err;
                     }
                 }
+            }
+            // Between valid spawn clusters choose the shortest reachable route.
+            if (areaIndex >= 0 && (areaDistance < bestDistance ||
+                    areaDistance == bestDistance && areaError < bestCenterError)) {
+                bestIndex = areaIndex;
+                bestDistance = areaDistance;
+                bestCenterError = areaError;
             }
         }
         if (bestIndex < 0) return false;
         int gx = (bestIndex % w) * TILE + TILE / 2;
         int gy = (bestIndex / w) * TILE + TILE / 2;
-        if (bestDistance <= 1 || reached(p, gx, gy)) {
+        if (reached(p, gx, gy)) {
             if (portal) {
                 // The server changes maps when it observes actual movement near
                 // the portal; do not send an arbitrary map-change command.
