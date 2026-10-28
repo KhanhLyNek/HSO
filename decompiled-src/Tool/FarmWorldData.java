@@ -1,7 +1,7 @@
 /* Generated from ALKAstraverse/hso-server/hso.sql (maps.vgos, maps.mobs, mobs).
  * World coordinates are pixels; one tile is 24 pixels.
  * Each MOB entry: {mapId, monsterTemplateId, monsterLevel, centerX1, centerY1, ...}.
- * Spawn clusters are connected components using a 190px neighbor radius.
+ * Spawn clusters are connected components using a 125px neighbor radius.
  * Each EXIT entry: {fromMapId, toMapId, entryX, entryY}.
  * This catalog is a snapshot: runtime map collision and portals must still be validated.
  */
@@ -18,7 +18,7 @@ public final class FarmWorldData {
         {4, 3, 7, 452, 275},
         {5, 3, 7, 998, 863},
         {5, 4, 9, 327, 923, 228, 455, 711, 549, 732, 942},
-        {7, 6, 11, 214, 546, 758, 600},
+        {7, 6, 11, 217, 412, 210, 707, 758, 600},
         {7, 7, 13, 480, 233},
         {8, 8, 15, 304, 226, 821, 329},
         {8, 9, 17, 695, 728, 891, 928},
