@@ -396,10 +396,37 @@ public final class AutoFarmController {
 
         int targetMap = getTargetMapId();
         if (currentMap != targetMap) {
-            int[] next = FarmRoutePlanner.next(currentMap, targetMap, p.x, p.y,
-                    disabledStoneRoutes);
+            // Some server builds spawn a player next to a portal with the
+            // is_changemap flag disarmed.  Walk >45px away, then cross normally.
+            if (portalRecoveryStage == 1 && portalRecoveryGate >= 0) {
+                int[] gate = FarmWorldData.EXITS[portalRecoveryGate];
+                int x = gate[2], y = gate[3];
+                int[][] retreat = {{x + 108, y}, {x - 108, y},
+                                   {x, y + 108}, {x, y - 108}};
+                if (!makeRoute(p, map, retreat, 3)) {
+                    disabledGates[portalRecoveryGate] = true;
+                    portalRecoveryStage = 0;
+                    portalRecoveryGate = -1;
+                    lastPlanAt = 0L;
+                    info("Auto Farm: khong the di ra khoi cong, thu tuyen khac");
+                }
+                return;
+            }
+            int[] next;
+            if (portalRecoveryStage == 2 && portalRecoveryGate >= 0) {
+                next = new int[]{FarmRoutePlanner.GATE, portalRecoveryGate};
+            } else {
+                next = FarmRoutePlanner.next(currentMap, targetMap, p.x, p.y,
+                        disabledStoneRoutes, disabledGates);
+            }
             if (next == null) {
-                stop("Auto Farm: khong co cong/da hop le tren map nay");
+                status = "WAIT_ROUTE";
+                // Do not destroy saved target.  A player may manually enter
+                // another area or this server may have different portal data.
+                if (now - lastProgressAt > 15000L) {
+                    info("Auto Farm: map nay khong co cong/da phu hop, giu bai up");
+                    lastProgressAt = now;
+                }
                 return;
             }
             if (next[0] == FarmRoutePlanner.STONE) {
@@ -408,15 +435,22 @@ public final class AutoFarmController {
                     lastPlanAt = 0L;
                     info("Auto Farm: da khong tiep can duoc, tim duong thay the");
                 }
-            } else {
-                int[] gate = FarmWorldData.EXITS[next[1]];
-                if (!navigateToPortal(p, map, gate[1])) {
-                    stop("Auto Farm: khong tim duoc duong toi cong map");
-                }
+            } else if (!navigateToPortal(p, map, next[1])) {
+                disabledGates[next[1]] = true;
+                portalRecoveryStage = 0;
+                portalRecoveryGate = -1;
+                lastPlanAt = 0L;
+                info("Auto Farm: cong khong tiep can duoc, doi tuyen");
             }
         } else {
+            portalRecoveryStage = 0;
+            portalRecoveryGate = -1;
             if (!navigateToSpawn(p, map)) {
-                stop("Auto Farm: khong tim duoc bai quai co the den");
+                status = "WAIT_SPAWN";
+                if (now - lastProgressAt > 15000L) {
+                    info("Auto Farm: khong toi duoc bai, giu muc tieu de thu lai");
+                    lastProgressAt = now;
+                }
             }
         }
     }
@@ -479,31 +513,22 @@ public final class AutoFarmController {
         return true;
     }
 
-    private static boolean navigateToPortal(Player p, LoadMap map, int nextMap) {
-        int portalIndex = -1;
-        int bestDistance = Integer.MAX_VALUE;
-        for (int i = 0; i < FarmWorldData.EXITS.length; ++i) {
-            int[] exit = FarmWorldData.EXITS[i];
-            if (exit[0] != map.idMap || exit[1] != nextMap) continue;
-            if (!portalPresent(exit[2], exit[3])) continue;
-            int d = abs(p.x - exit[2]) + abs(p.y - exit[3]);
-            if (d < bestDistance) {
-                bestDistance = d;
-                portalIndex = i;
-            }
-        }
-        if (portalIndex < 0) return false;
+    private static boolean navigateToPortal(Player p, LoadMap map, int portalIndex) {
+        if (portalIndex < 0 || portalIndex >= FarmWorldData.EXITS.length) return false;
         int[] portal = FarmWorldData.EXITS[portalIndex];
+        if (portal[0] != map.idMap || !portalPresent(portal[2], portal[3]))
+            return false;
         status = "TO_PORTAL";
-        if (abs(p.x - portal[2]) < 38 && abs(p.y - portal[3]) < 38) {
-            // Trigger the ordinary server-side portal check using the actual
-            // current player position, not a fabricated destination.
+        if (abs(p.x - portal[2]) < 30 && abs(p.y - portal[3]) < 30) {
+            // Use the player's actual world coordinates.  If the server's
+            // is_changemap flag is disarmed, a retreat/re-entry will follow.
             GlobalService.gI().player_move((short)p.x, (short)p.y);
+            gateInProgress = portalIndex;
             waitingForPortal = true;
             portalWaitingSince = mSystem.currentTimeMillis();
             return true;
         }
-        return makeRoute(p, map, new int[][] {{portal[2], portal[3]}}, 1);
+        return makeRoute(p, map, new int[][]{{portal[2], portal[3]}}, 1);
     }
 
     private static boolean portalPresent(int x, int y) {
@@ -608,15 +633,19 @@ public final class AutoFarmController {
         int gy = (bestIndex / w) * TILE + TILE / 2;
         if (reached(p, gx, gy)) {
             if (mode == 1) {
-                if (bestCenterError <= 60) {
-                    GlobalService.gI().player_move((short)p.x, (short)p.y);
-                    waitingForPortal = true;
-                    portalWaitingSince = mSystem.currentTimeMillis();
-                    return true;
-                }
-                return false;
+                // Continue with the actual chosen gate on the next tick;
+                // navigation is only complete after the server changes map.
+                lastPlanAt = 0L;
+                return true;
             }
             if (mode == 2) return beginStoneRequest();
+            if (mode == 3) {
+                portalRecoveryStage = 2;
+                lastPlanAt = 0L;
+                status = "PORTAL_REENTER";
+                info("Auto Farm: da ra xa cong, tien hanh vao lai");
+                return true;
+            }
             enterFarming(p);
             return true;
         }
