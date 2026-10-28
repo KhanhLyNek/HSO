@@ -13,9 +13,11 @@ import GameObjects.Player;
 import GameScreen.GameScreen;
 import GameScreen.PaintInfoGameScreen;
 import InterfaceComponents.iCommand;
+import Main.GameCanvas;
 
 public final class FarmUiBridge {
     private static final int FARM_MENU_ID = 91;
+    private static final int FARM_STATUS_ID = 92;
 
     private FarmUiBridge() {}
 
@@ -24,12 +26,28 @@ public final class FarmUiBridge {
         String label = AutoFarmController.isEnabled() ?
                 "Tat Auto Farm" : "Bat Auto Farm";
         menu.addElement(new iCommand(label, FARM_MENU_ID, GameScreen.gI()));
+        menu.addElement(new iCommand("Trang thai Auto Farm", FARM_STATUS_ID, GameScreen.gI()));
     }
 
     public static boolean handleCommand(int command) {
-        if (command != FARM_MENU_ID) return false;
-        AutoFarmController.toggle();
-        return true;
+        if (command == FARM_MENU_ID) {
+            AutoFarmController.toggle();
+            return true;
+        }
+        if (command == FARM_STATUS_ID) {
+            int current = GameCanvas.loadmap == null ? -1 : GameCanvas.loadmap.idMap;
+            int target = AutoFarmController.getTargetMapId();
+            GameCanvas.addInfoChar("Farm " + AutoFarmController.getStatus() +
+                    " - map " + current + " -> " + target);
+            if (target >= 0) {
+                GameCanvas.addInfoChar("Quai ID " + AutoFarmController.getTargetMonsterId() +
+                        " Lv " + AutoFarmController.getTargetMonsterLevel() +
+                        " | bai (" + AutoFarmController.getFarmAnchorX() +
+                        "," + AutoFarmController.getFarmAnchorY() + ")");
+            }
+            return true;
+        }
+        return false;
     }
 
     /**
