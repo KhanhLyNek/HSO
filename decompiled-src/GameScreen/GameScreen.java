@@ -617,6 +617,7 @@ extends MainScreen {
                 mGraphics2.fillRect(MainScreen.cameraMain.xCam, MainScreen.cameraMain.yCam, GameCanvas.w, GameCanvas.h, false);
             }
             GameCanvas.loadmap.paint(mGraphics2);
+            AutoFarmController.paintFarmRing(mGraphics2);
             infoGame.paintShip(mGraphics2);
             if (this.isFullScreen) {
                 mGraphics2.drawRecAlpa(0, 0, GameCanvas.loadmap.mapW * 24, GameCanvas.loadmap.mapH * 24, this.colorRec);
