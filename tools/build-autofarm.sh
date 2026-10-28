@@ -61,8 +61,8 @@ required=[
 with zipfile.ZipFile(original) as a, zipfile.ZipFile(output) as b:
     errors=b.testzip()
     if errors: raise SystemExit('Corrupt ZIP entry: '+errors)
-    a_names=set(a.namelist())
-    b_names=set(b.namelist())
+    a_names=set(x for x in a.namelist() if not x.endswith('/'))
+    b_names=set(x for x in b.namelist() if not x.endswith('/'))
     missing=sorted(a_names-b_names)
     if missing: raise SystemExit('Missing original assets: '+repr(missing[:20]))
     for name in required:
