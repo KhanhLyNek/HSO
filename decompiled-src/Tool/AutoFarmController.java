@@ -211,8 +211,12 @@ public final class AutoFarmController {
                 waitingForPortal = false;
                 stoneStage = 0;
                 waitingForRevive = true;
-                status = "WAIT_REVIVE";
-                info("Auto Farm: da guc, giu bai farm va cho hoi sinh");
+                status = "RETURN_HOME";
+                // Verified: normal client gohome(0), packet 31 + byte 0;
+                // server MapService.request_livefromdie() revives in the village.
+                // Send once; never spam if this server forbids revival here.
+                GlobalService.gI().gohome((byte)0);
+                info("Auto Farm: da guc, gui ve lang, giu bai farm da luu");
             }
             return;
         }
