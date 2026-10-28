@@ -459,7 +459,9 @@ extends MainObject {
             }
             if (isAutoFire == 1) {
                 this.coutauto = this.Action == 0 ? ++this.coutauto : 0;
-                if (this.coutauto > 500) {
+                // Reacquire a stale target sooner while farming; do not change
+                // skill cooldown, movement packet cadence or server-side speed.
+                if (this.coutauto > (AutoFarmController.isEnabled() ? 250 : 500)) {
                     GameCanvas.addInfoChar(T.farfocus);
                     this.KillFire = -1;
                     this.IDAttack = -1;
@@ -581,6 +583,10 @@ extends MainObject {
         }
         long l = System.currentTimeMillis();
         MainObject mainObject = GameScreen.ObjFocus;
+        if (!AutoFarmController.acceptsTarget(mainObject)) {
+            GameScreen.ObjFocus = null;
+            mainObject = null;
+        }
         if (mainObject == null || mainObject.Action == 4 || mainObject.typeObject != 1 || mainObject.isSend || mainObject.isDie) {
             if (mainObject != null && mainObject.isDie) {
                 GameScreen.ObjFocus = null;
