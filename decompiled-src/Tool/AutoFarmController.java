@@ -9,6 +9,7 @@
 package Tool;
 
 import CLib.Session_ME;
+import CLib.mGraphics;
 import CLib.mSystem;
 import GameObjects.MainMonster;
 import GameObjects.MainObject;
@@ -18,17 +19,21 @@ import GameScreen.LoadMapScreen;
 import Main.GameCanvas;
 import Model.Point;
 import Thread_More.LoadMap;
+import netcommand.global.GlobalService;
 
 public final class AutoFarmController {
     private static final int TILE = 24;
     private static final int SEARCH_RADIUS_TILES = 4;
     private static final int MAX_ROUTE_TILES = 19;
     private static final int ARRIVAL_TOLERANCE = 19;
+    private static final int RING_RADIUS = 110;
     private static final int MAX_LEVEL_BELOW_PLAYER = 2;
     private static final int MAP_LIMIT = 128;
     private static final int MAX_STALL_RETRIES = 4;
     private static final long STALL_TIMEOUT_MS = 3500L;
     private static final long PORTAL_TIMEOUT_MS = 12000L;
+    private static final long STONE_TIMEOUT_MS = 8000L;
+    private static final long STONE_MENU_DELAY_MS = 350L;
     private static final long ROUTE_REPLAN_DELAY_MS = 400L;
 
     private static boolean enabled;
@@ -47,6 +52,14 @@ public final class AutoFarmController {
     private static long lastPlanAt;
     private static long portalWaitingSince;
     private static String status = "OFF";
+    private static boolean waitingForRevive;
+    private static int farmAnchorX = -1;
+    private static int farmAnchorY = -1;
+    private static int stoneStage;
+    private static int stoneRouteIndex = -1;
+    private static long stoneStageAt;
+    private static final boolean[] disabledStoneRoutes =
+            new boolean[FarmTeleportData.ROUTES.length];
 
     private AutoFarmController() {
     }
@@ -75,9 +88,31 @@ public final class AutoFarmController {
         ownsRoute = false;
         farming = false;
         waitingForPortal = false;
+        waitingForRevive = false;
+        stoneStage = 0;
+        stoneRouteIndex = -1;
         targetRow = -1;
+        farmAnchorX = -1;
+        farmAnchorY = -1;
         selectedLevel = p.Lv;
         observedMap = GameCanvas.loadmap.idMap;
+        for (int i = 0; i < disabledStoneRoutes.length; i++) disabledStoneRoutes[i] = false;
+        int[] remembered = FarmMemory.load(p.ID);
+        if (remembered != null && remembered[0] == p.Lv) {
+            int[] reachable = FarmRoutePlanner.distancesFrom(observedMap, disabledStoneRoutes);
+            for (int i = 0; i < FarmWorldData.MOBS.length; i++) {
+                int[] row = FarmWorldData.MOBS[i];
+                if (row[0] == remembered[1] && row[1] == remembered[2] &&
+                        row[2] == remembered[3] &&
+                        row[0] >= 0 && row[0] < reachable.length &&
+                        reachable[row[0]] >= 0) {
+                    targetRow = i;
+                    farmAnchorX = remembered[4];
+                    farmAnchorY = remembered[5];
+                    break;
+                }
+            }
+        }
         lastPlanAt = 0L;
         lastProgressAt = mSystem.currentTimeMillis();
         retryCount = 0;
@@ -95,7 +130,12 @@ public final class AutoFarmController {
         enabled = false;
         farming = false;
         waitingForPortal = false;
+        waitingForRevive = false;
+        stoneStage = 0;
+        stoneRouteIndex = -1;
         targetRow = -1;
+        farmAnchorX = -1;
+        farmAnchorY = -1;
         status = "OFF";
         info(reason);
     }
@@ -118,6 +158,21 @@ public final class AutoFarmController {
 
     public static int getTargetMonsterLevel() {
         return targetRow < 0 ? -1 : FarmWorldData.MOBS[targetRow][2];
+    }
+
+    public static int getFarmAnchorX() { return farmAnchorX; }
+    public static int getFarmAnchorY() { return farmAnchorY; }
+
+    /** Draw world-space white spawn perimeter, not a moving monster marker. */
+    public static void paintFarmRing(mGraphics g) {
+        if (!enabled || farmAnchorX < 0 || farmAnchorY < 0 ||
+                GameCanvas.loadmap == null ||
+                GameCanvas.loadmap.idMap != getTargetMapId()) return;
+        g.setColor(0xFFFFFF);
+        g.drawArc(farmAnchorX - RING_RADIUS, farmAnchorY - RING_RADIUS,
+                RING_RADIUS * 2, RING_RADIUS * 2, 0, 360, false);
+        g.drawArc(farmAnchorX - RING_RADIUS - 2, farmAnchorY - RING_RADIUS - 2,
+                RING_RADIUS * 2 + 4, RING_RADIUS * 2 + 4, 0, 360, false);
     }
 
     /** Only allow the selected monster template into native auto-attack. */
