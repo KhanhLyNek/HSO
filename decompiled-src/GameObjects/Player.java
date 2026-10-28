@@ -38,6 +38,7 @@ import Skill.MainListSkill;
 import Skill.Skill;
 import Skill.SplashSkill;
 import Thread_More.LoadMap;
+import Tool.AutoFarmController;
 import netcommand.global.GlobalService;
 
 public class Player
@@ -635,6 +636,7 @@ extends MainObject {
             int n2;
             MainObject mainObject2 = (MainObject)GameScreen.Vecplayers.elementAt(i);
             if (mainObject2 == null || mainObject2.Action == 4 || mainObject2.isSend || mainObject2.typeObject != 1 || mainObject2.isLuaThieng() || (n2 = MainObject.getDistance(this.x, this.y, mainObject2.x, mainObject2.y)) >= n && mainObject2.typeBoss != 2) continue;
+            if (!AutoFarmController.acceptsTarget(mainObject2)) continue;
             n = n2;
             mainObject = mainObject2;
             if (mainObject2.typeBoss == 2) break;
