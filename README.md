@@ -2,6 +2,24 @@
 
 > File `.jar` của game không có trong repo. Bạn tự chép `KnightOnline_v403.jar` vào rồi chạy `patch_jar.py`.
 
+## Cài nhanh trên Termux (lệnh `hso`)
+```bash
+pkg install -y curl
+curl -fsSL https://raw.githubusercontent.com/KhanhLyNek/HSO/main/install.sh | bash
+```
+Sau khi cài, mỗi lần gõ `hso` thì Termux sẽ **tự kéo bản mới nhất từ repo về rồi chạy server**.
+
+| Lệnh | Tác dụng |
+|---|---|
+| `hso` | Cập nhật, rồi chạy server Thỏ Mika (cổng 19129) |
+| `hso patch [ip]` | Vá `KnightOnline_v403.jar` (để trong `~/HSO` hoặc Download) thành `KO_ThoMika.jar`, rồi chép vào Download |
+| `hso sniff <host>` | Proxy bắt gói tin tới server thật |
+| `hso test` | Client giả lập để kiểm tra server |
+| `hso help` | Xem các lệnh |
+
+Nếu bạn sửa file ngay trong `~/HSO` trên điện thoại, lệnh `git pull` sẽ không cập nhật được. Khi đó `hso` vẫn chạy bản đang có trong máy.
+Muốn bỏ hết thay đổi trong máy để lấy bản mới nhất: `git -C ~/HSO reset --hard origin/main`
+
 ## Bản vá game (`patch_jar.py`)
 - Xoá toàn bộ server gốc (VN, Global, Indo, USA). Chỉ còn đúng **1 server tên "Thỏ Mika"**, trỏ về `127.0.0.1:19129`.
 - Tắt việc game tải danh sách server qua HTTP hoặc RMS, để danh sách không bị ghi đè.
