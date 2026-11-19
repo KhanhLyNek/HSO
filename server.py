@@ -15,6 +15,7 @@ from ko_proto import (XorCipher, StreamParser, Reader, Writer, build_s2c,
                       encode_key, cmd_name, hexdump)
 
 HANDLERS = {}
+SENSITIVE = {1, 39}   # LOGIN, REGISTER: có mật khẩu -> không hexdump ra log
 DATA_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "accounts.json")
 
 
@@ -176,13 +177,13 @@ async def handle(reader, writer):
                 fn = HANDLERS.get(cmd)
                 if fn is None:
                     print("  (chưa có handler)")
-                    print(hexdump(data))
+                    print(hexdump(data) if cmd not in SENSITIVE else "    (ẩn: có mật khẩu)")
                     continue
                 try:
                     await fn(c, Reader(data))
                 except Exception as e:
                     print("  lỗi handler:", repr(e))
-                    print(hexdump(data))
+                    print(hexdump(data) if cmd not in SENSITIVE else "    (ẩn: có mật khẩu)")
     except ConnectionError:
         pass
     finally:

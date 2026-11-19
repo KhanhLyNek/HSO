@@ -12,6 +12,8 @@ Sau khi cài, mỗi lần gõ `hso` thì Termux sẽ **tự kéo bản mới nh�
 | Lệnh | Tác dụng |
 |---|---|
 | `hso` | Cập nhật, rồi chạy server Thỏ Mika (cổng 19129) |
+| `hsolog` | Đẩy log server và log J2ME Loader lên nhánh `logs` của repo |
+| `hso token` | Nhập hoặc đổi GitHub token dùng để đẩy log |
 | `hso patch [ip]` | Vá `KnightOnline_v403.jar` (để trong `~/HSO` hoặc Download) thành `KO_ThoMika.jar`, rồi chép vào Download |
 | `hso sniff <host>` | Proxy bắt gói tin tới server thật |
 | `hso test` | Client giả lập để kiểm tra server |
@@ -19,6 +21,15 @@ Sau khi cài, mỗi lần gõ `hso` thì Termux sẽ **tự kéo bản mới nh�
 
 Nếu bạn sửa file ngay trong `~/HSO` trên điện thoại, lệnh `git pull` sẽ không cập nhật được. Khi đó `hso` vẫn chạy bản đang có trong máy.
 Muốn bỏ hết thay đổi trong máy để lấy bản mới nhất: `git -C ~/HSO reset --hard origin/main`
+
+## Gửi log (`hsolog`)
+1. Chạy một lần duy nhất: `termux-setup-storage` để Termux đọc được `/sdcard/J2ME-Loader/`, rồi chạy `hso token` và dán token.
+   Tạo token tại https://github.com/settings/personal-access-tokens/new, chọn **Only select repositories → HSO** và **Contents: Read and write**.
+2. Khi game lỗi, mở menu ⋮ của J2ME Loader và bấm **Lưu log** (game ghi ra `J2ME-Loader/log.txt`).
+3. Gõ `hsolog`. Nếu đã có token thì mỗi lần tắt `hso` bằng Ctrl+C, log cũng tự được đẩy lên.
+
+Log nằm ở nhánh [`logs`](https://github.com/KhanhLyNek/HSO/tree/logs): bản mới nhất trong `latest/`, các bản cũ trong `history/`.
+Repo đang **công khai** nên ai cũng xem được log. Server không ghi mật khẩu vào log, còn token chỉ lưu trong `~/.hso/token` trên điện thoại.
 
 ## Bản vá game (`patch_jar.py`)
 - Xoá toàn bộ server gốc (VN, Global, Indo, USA). Chỉ còn đúng **1 server tên "Thỏ Mika"**, trỏ về `127.0.0.1:19129`.

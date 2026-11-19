@@ -34,8 +34,16 @@ fi
 exec bash "\$HSO_DIR/hso.sh" "\$@"
 EOF
 chmod +x "$BIN" "$HSO_DIR/hso.sh"
+cat > "${BIN}log" <<EOF
+#!${PREFIX:-/data/data/com.termux/files/usr}/bin/bash
+HSO_DIR="\${HSO_DIR:-$HSO_DIR}"
+timeout 20 git -C "\$HSO_DIR" pull --ff-only --quiet 2>/dev/null
+exec bash "\$HSO_DIR/hso.sh" log "\$@"
+EOF
+chmod +x "${BIN}log"
 
 echo
 echo "Xong! Gõ:  hso         -> cập nhật + chạy server Thỏ Mika"
+echo "           hsolog      -> đẩy log server + J2ME lên GitHub"
 echo "           hso patch   -> vá file game (cần KnightOnline_v403.jar)"
 echo "           hso help    -> xem các lệnh"
