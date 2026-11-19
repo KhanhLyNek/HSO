@@ -114,6 +114,11 @@ async def h_login(c, r):
     await send_list_char(c)
 
 
+def char_look(ch):
+    """Hình mặc định giống màn tạo nhân vật: thân = chân = lớp nhân vật."""
+    return [(0, ch.get("body", ch["clazz"])), (1, ch.get("leg", ch["clazz"]))]
+
+
 async def send_list_char(c):
     """cmd 13 – ReadMessenge.listChar. 0 nhân vật -> client mở màn tạo nhân vật."""
     chars = DB["accounts"][c.user]["chars"]
@@ -121,7 +126,10 @@ async def send_list_char(c):
     for ch in chars:
         w.int(ch["id"]).utf(ch["name"])
         w.byte(ch["head"]).byte(ch["hair"]).byte(ch["eye"])
-        w.byte(0)                  # số món đang mặc: (slot, id) x n
+        look = char_look(ch)
+        w.byte(len(look))          # đồ đang mặc (ô, id hình): 0=thân 1=chân 2=mũ 7=cánh
+        for slot, part in look:
+            w.byte(slot).byte(part)
         w.short(ch["lv"])
         w.byte(ch["clazz"]).byte(0).byte(0)
         w.short(-1)                # không có bang (>=0 thì kèm UTF tên + byte chức vụ)
@@ -171,7 +179,42 @@ async def h_select_char(c, r):
         save_db()
     await send_main_char_info(c, ch)
     await send_change_map(c, m, ch["x"], ch["y"])
+    await send_wearing(c, ch)
     await send_skill_list(c, ch)
+
+
+# ô đồ trong gói CHAR_WEARING -> MainObject.setWearingEquip
+SLOT_WEAPON, SLOT_BODY, SLOT_PET, SLOT_HAT, SLOT_LEG, SLOT_WING = 0, 1, 5, 6, 7, 10
+N_SLOTS = 12
+
+
+async def send_wearing(c, ch):
+    """cmd 15 – ReadMessenge.charWearing. Byte 'part' của mỗi món quyết định
+    hình vẽ (/c/body/b<part>_body.png ...). Không có món nào thì nhân vật vô hình."""
+    items = {
+        SLOT_BODY: ("Áo tân thủ", ch.get("body", ch["clazz"])),
+        SLOT_LEG: ("Quần tân thủ", ch.get("leg", ch["clazz"])),
+    }
+    w = Writer().short(ch["id"]).byte(N_SLOTS)
+    for slot in range(N_SLOTS):
+        if slot not in items:
+            w.byte(-1)
+            continue
+        name, part = items[slot]
+        w.byte(slot)            # id món
+        w.utf(name)
+        w.byte(ch["clazz"])     # lớp dùng được
+        w.byte(slot)            # loại món
+        w.short(1)              # cấp
+        w.byte(part)            # id hình (part)
+        w.byte(0)               # màu/phẩm
+        w.short(0)
+        w.byte(0)
+        w.byte(0)               # số chỉ số: (ubyte, int) x n
+        w.byte(0)
+    w.byte(-1)                  # không có thú cưng
+    w.byte(0)                   # thời trang: short x n
+    await c.send(15, w)
 
 
 async def send_skill_list(c, ch):

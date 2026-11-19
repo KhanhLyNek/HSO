@@ -111,6 +111,23 @@ w_, h_, tile = mdata[0], mdata[1], mdata[2]
 assert len(mdata) == 3 + w_ * h_
 print("CHANGE_MAP:", mid, mname, "%dx%d tile%d" % (w_, h_, tile), "vị trí", tx, ty)
 
+r = Reader(expect(15))                     # CHAR_WEARING
+assert r.short() == cid
+parts = {}
+for slot in range(r.byte()):
+    iid = r.byte()
+    if iid <= -1:
+        continue
+    r.utf(); r.byte(); r.byte(); r.short(); part = r.byte(); r.byte(); r.short(); r.byte()
+    for _ in range(r.byte()):
+        r.ubyte(); r.int()
+    r.byte()
+    parts[slot] = part
+assert r.byte() == -1
+for _ in range(r.byte()): r.short()
+assert r.left() == 0, "CHAR_WEARING thừa %d byte" % r.left()
+assert parts.get(1) is not None and parts.get(7) is not None
+print("CHAR_WEARING: thân", parts[1], "chân", parts[7])
 r = Reader(expect(29))
 assert r.byte() == 0 and r.left() == 0
 print("LIST_SKILL: 0 kỹ năng")
