@@ -1,24 +1,35 @@
 Server KO giả lập nghe 0.0.0.0:19129
-client kết nối ('127.0.0.1', 41508)
+client kết nối ('127.0.0.1', 60106)
 C->S cmd=-40 (GET_KEY) len=0
   S->C cmd=-40 (GET_KEY) len=9
-  key = 3ba7509ce07ea5cd
+  key = a1fb3ef3b560bf31
 C->S cmd=1 (LOGIN) len=37
   LOGIN: {'user': '1', 'version': '4.0.3', 'device': 0}
   S->C cmd=13 (LIST_CHAR/SELECT_CHAR) len=25
 C->S cmd=61 (NAME_SERVER) len=0
 C->S cmd=5 (CHAR_INFO) len=2
-  (chưa có handler)
-    0000  00 01                                             ..
 C->S cmd=13 (LIST_CHAR/SELECT_CHAR) len=5
   SELECT_CHAR: 0 1
-  S->C cmd=2 (LOGIN_FAIL) len=61
+  S->C cmd=3 (MAIN_CHAR_INFO) len=137
+  S->C cmd=12 (CHANGE_MAP) len=1240
 C->S cmd=55 (SAVE_RMS) len=4
-  (chưa có handler)
-    0000  01 02 00 00                                       ....
 C->S cmd=55 (SAVE_RMS) len=4
+C->S cmd=55 (SAVE_RMS) len=4
+C->S cmd=59 (PLAYER_SUCKHOE) len=0
   (chưa có handler)
-    0000  01 01 00 00                                       ....
+
+C->S cmd=55 (SAVE_RMS) len=4
+C->S cmd=55 (SAVE_RMS) len=4
+C->S cmd=-52 (LOAD_IMAGE_DATA_PART_CHAR) len=3
+  (chưa có handler)
+    0000  64 00 00                                          d..
+C->S cmd=-51 (LOAD_IMAGE) len=2
+  S->C cmd=-51 (LOAD_IMAGE) len=20607
+C->S cmd=-52 (LOAD_IMAGE_DATA_PART_CHAR) len=3
+  (chưa có handler)
+    0000  65 00 00                                          e..
+C->S cmd=-51 (LOAD_IMAGE) len=2
+  LOAD_IMAGE 10600: chưa có ảnh
 client ngắt kết nối
 
 Đã tắt server Thỏ Mika.
