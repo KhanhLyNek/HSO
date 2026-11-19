@@ -1,0 +1,24 @@
+Server KO giả lập nghe 0.0.0.0:19129
+client kết nối ('127.0.0.1', 41508)
+C->S cmd=-40 (GET_KEY) len=0
+  S->C cmd=-40 (GET_KEY) len=9
+  key = 3ba7509ce07ea5cd
+C->S cmd=1 (LOGIN) len=37
+  LOGIN: {'user': '1', 'version': '4.0.3', 'device': 0}
+  S->C cmd=13 (LIST_CHAR/SELECT_CHAR) len=25
+C->S cmd=61 (NAME_SERVER) len=0
+C->S cmd=5 (CHAR_INFO) len=2
+  (chưa có handler)
+    0000  00 01                                             ..
+C->S cmd=13 (LIST_CHAR/SELECT_CHAR) len=5
+  SELECT_CHAR: 0 1
+  S->C cmd=2 (LOGIN_FAIL) len=61
+C->S cmd=55 (SAVE_RMS) len=4
+  (chưa có handler)
+    0000  01 02 00 00                                       ....
+C->S cmd=55 (SAVE_RMS) len=4
+  (chưa có handler)
+    0000  01 01 00 00                                       ....
+client ngắt kết nối
+
+Đã tắt server Thỏ Mika.

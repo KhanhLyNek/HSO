@@ -1,0 +1,6 @@
+thoi_gian: 2026-11-20 04:57:21 +0700
+hso: 5323471 Thêm hsolog: tự đẩy log server + J2ME Loader lên nhánh logs
+python: Python 3.14.10
+android: 16 / 23117RA68G
+server_log: /data/data/com.termux/files/home/HSO/logs/server-20261120-045344.log
+j2me_log: khong thay (trong game: menu -> Lưu log; Termux: termux-setup-storage)
