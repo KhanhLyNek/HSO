@@ -76,6 +76,47 @@ if not chars:
     chars = parse_list(expect(13))
     print("Sau khi tạo:", chars)
 send(13, Writer().byte(0).int(chars[0][0]).bytes())
-expect(2)
+
+# --- cmd 3: mainCharInfo (đọc đúng thứ tự trong ReadMessenge) ---
+r = Reader(expect(3))
+cid, name = r.short(), r.utf()
+hp, mhp, mp, mmp = r.int(), r.int(), r.int(), r.int()
+head, clazz, eye, hair = r.byte(), r.byte(), r.byte(), r.byte()
+for _ in range(r.byte()):
+    r.ubyte(); r.int()
+lv = r.short(); r.short(); r.short(); r.short()
+for _ in range(8): r.short()
+for _ in range(42): r.byte()
+r.byte(); r.short(); r.byte()
+if r.short() >= 0:
+    r.int(); r.utf(); r.byte()
+r.utf(); r.long()
+for _ in range(r.byte()): r.short()
+r.byte(); r.short(); r.byte()
+for _ in range(9): r.short()
+assert r.left() == 0, "MAIN_CHAR_INFO thừa %d byte" % r.left()
+print("MAIN_CHAR_INFO:", cid, name, "hp", hp, "lv", lv)
+
+# --- cmd 12: changeMap ---
+r = Reader(expect(12))
+mid, tx, ty, mini, mname = r.short(), r.short(), r.short(), r.short(), r.utf()
+mdata = r.raw(r.short())
+if r.byte() >= 0: r.short()
+r.raw(r.short())
+for _ in range(r.byte()):
+    r.short(); r.short(); r.utf()
+r.byte(); r.byte(); r.byte(); r.bool(); r.bool()
+assert r.left() == 0, "CHANGE_MAP thừa %d byte" % r.left()
+w_, h_, tile = mdata[0], mdata[1], mdata[2]
+assert len(mdata) == 3 + w_ * h_
+print("CHANGE_MAP:", mid, mname, "%dx%d tile%d" % (w_, h_, tile), "vị trí", tx, ty)
+
+send(-51, Writer().short(10400 + tile).bytes())
+r = Reader(expect(-51))
+iid = r.short(); png = r.raw(r.left())
+assert png[:8] == b"\x89PNG\r\n\x1a\n"
+print("LOAD_IMAGE", iid, len(png), "byte PNG")
+send(12)                                   # Ok_Change_Map
+send(4, Writer().short(tx * 24 + 24).short(ty * 24).bytes())
 s.close()
 print("OK")

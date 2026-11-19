@@ -4,6 +4,7 @@
 Khung server giả lập KnightOnline v4.0.3 chạy local (Termux).
 
 Đã làm:  bắt tay -40, đăng nhập (tự tạo tài khoản mới), danh sách nhân vật (13),
+         vào map (3 MAIN_CHAR_INFO + 12 CHANGE_MAP), tileset tự vẽ (-51), di chuyển (4),
          tạo nhân vật (14). Dữ liệu lưu ở data/accounts.json.
 Cần viết tiếp: từng handler theo định dạng trong ReadMessenge.class
          (xem README). Mỗi handler = 1 hàm đăng ký bằng @on(cmd).
@@ -11,6 +12,7 @@ Cần viết tiếp: từng handler theo định dạng trong ReadMessenge.class
 Chạy:  python server.py            (nghe 0.0.0.0:19129)
 """
 import argparse, asyncio, json, os, random
+import world
 from ko_proto import (XorCipher, StreamParser, Reader, Writer, build_s2c,
                       encode_key, cmd_name, hexdump)
 
@@ -52,6 +54,8 @@ class Client:
         self.rx = StreamParser("c2s", XorCipher())   # con trỏ đọc
         self.tx = XorCipher()                        # con trỏ ghi
         self.user = None
+        self.char = None
+        self.dirty = False
 
     async def send(self, cmd, data=b""):
         if isinstance(data, Writer):
@@ -154,8 +158,101 @@ async def h_create_char(c, r):
 async def h_select_char(c, r):
     kind, char_id = r.byte(), r.int()
     print("  SELECT_CHAR:", kind, char_id)
-    # TODO: gửi MAIN_CHAR_INFO(3), CHAR_WEARING(15), CHAR_INVENTORY(16), CHANGE_MAP(12)...
-    await c.dialog_ok("Thỏ Mika: phần vào game đang được phát triển!")
+    if c.user is None:
+        return
+    ch = next((x for x in DB["accounts"][c.user]["chars"] if x["id"] == char_id), None)
+    if ch is None:
+        await c.dialog_ok("Không tìm thấy nhân vật")
+        return
+    c.char = ch
+    m = world.MAPS.get(ch.get("map")) or world.MAPS[1]
+    if ch.get("map") != m.id or not m.walkable(ch.get("x", 0), ch.get("y", 0)):
+        ch["map"], (ch["x"], ch["y"]) = m.id, m.spawn
+        save_db()
+    await send_main_char_info(c, ch)
+    await send_change_map(c, m, ch["x"], ch["y"])
+
+
+async def send_main_char_info(c, ch):
+    """cmd 3 – ReadMessenge.mainCharInfo"""
+    lv = ch.get("lv", 1)
+    hp = mp = 100 + 20 * lv
+    w = Writer()
+    w.short(ch["id"]).utf(ch["name"])
+    w.int(hp).int(hp).int(mp).int(mp)
+    w.byte(ch["head"]).byte(ch["clazz"]).byte(ch["eye"]).byte(ch["hair"])
+    w.byte(0)                          # số chỉ số phụ: (ubyte id, int value) x n
+    w.short(lv).short(0)               # cấp, % kinh nghiệm
+    w.short(0).short(0)                # điểm tiềm năng, điểm kỹ năng
+    for _ in range(8):                 # tiềm năng gốc [4] + cộng thêm [4]
+        w.short(5)
+    for _ in range(21 * 2):            # cấp kỹ năng [21] + cộng thêm [21]
+        w.byte(0)
+    w.byte(0).short(0)                 # typePk, pointPk
+    w.byte(42)                         # số ô hành trang
+    w.short(-1)                        # không bang
+    w.utf("").long(0)                  # vùng đặc biệt, thời gian
+    w.byte(0)                          # thời trang
+    w.byte(0)                          # naptien
+    w.short(-1).byte(0)                # mặt nạ, vẽ mặt nạ trước
+    for _ in range(9):                 # phi phong, vũ khí, thú cưỡi, tóc, cánh, danh hiệu, thân, chân, biến hình
+        w.short(-1)
+    await c.send(3, w)
+
+
+async def send_change_map(c, m, tx, ty):
+    """cmd 12 – ReadMessenge.changeMap"""
+    data = m.data()
+    w = Writer()
+    w.short(m.id).short(tx).short(ty)
+    w.short(m.id).utf(m.name)          # id minimap, tên map
+    w.short(len(data)).raw(data)
+    w.byte(-1)                         # không có ảnh nền
+    w.short(0)                         # vật trang trí trên map
+    w.byte(0)                          # điểm chuyển map: (short x, short y, UTF tên) x n
+    w.byte(0)                          # isTele
+    w.byte(0)                          # khu vực
+    w.byte(0)                          # loại map
+    w.bool(False).bool(False)          # map làng, hiện hồi sinh
+    await c.send(12, w)
+
+
+@on(12)
+async def h_ok_change_map(c, r):
+    print("  client đã tải xong map")
+
+
+@on(4)
+async def h_move(c, r):
+    x, y = r.short(), r.short()
+    ch = getattr(c, "char", None)
+    if ch is None:
+        return
+    tx, ty = x // world.TILE, y // world.TILE
+    m = world.MAPS.get(ch["map"])
+    if m and m.walkable(tx, ty):
+        ch["x"], ch["y"] = tx, ty
+        c.dirty = True
+
+
+@on(-51)
+async def h_load_image(c, r):
+    img_id = r.short()
+    png = world.image_for(img_id)
+    if png is None:
+        print("  LOAD_IMAGE %d: chưa có ảnh" % img_id)
+        return
+    await c.send(-51, Writer().short(img_id).raw(png))
+
+
+@on(5)
+async def h_char_info(c, r):
+    pass   # TODO: thông tin nhân vật khác
+
+
+@on(55)
+async def h_save_rms(c, r):
+    pass   # client đồng bộ RMS; chưa lưu
 
 
 @on(61)
@@ -187,6 +284,8 @@ async def handle(reader, writer):
     except ConnectionError:
         pass
     finally:
+        if getattr(c, "dirty", False):
+            save_db()
         writer.close()
         print("client ngắt kết nối")
 
