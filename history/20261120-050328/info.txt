@@ -1,0 +1,6 @@
+thoi_gian: 2026-11-20 05:03:30 +0700
+hso: 17a8ed3 Vào game: Làng Thỏ Mika với bản đồ và tileset tự vẽ
+python: Python 3.14.10
+android: 16 / 23117RA68G
+server_log: /data/data/com.termux/files/home/HSO/logs/server-20261120-050237.log
+j2me_log: khong thay (trong game: menu -> Lưu log; Termux: termux-setup-storage)
