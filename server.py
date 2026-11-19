@@ -171,6 +171,13 @@ async def h_select_char(c, r):
         save_db()
     await send_main_char_info(c, ch)
     await send_change_map(c, m, ch["x"], ch["y"])
+    await send_skill_list(c, ch)
+
+
+async def send_skill_list(c, ch):
+    """cmd 29 – ReadMessenge.Skill_List. Gói này bật LoadMapScreen.isLoadSkill
+    (màn tải map chờ cờ này). Tạm thời chưa có kỹ năng."""
+    await c.send(29, Writer().byte(0))
 
 
 async def send_main_char_info(c, ch):
@@ -252,12 +259,35 @@ async def h_char_info(c, r):
 
 @on(55)
 async def h_save_rms(c, r):
-    pass   # client đồng bộ RMS; chưa lưu
+    """Client đồng bộ RMS với server.
+    [1][kiểu][short 0]        -> xin dữ liệu: trả [kiểu][short len][data]
+    [0][kiểu][short len][data] -> lưu
+    Kiểu 2 bật MainRMS.isLoadBegin (màn tải map chờ cờ này)."""
+    action, kind = r.byte(), r.byte()
+    n = r.short()
+    data = r.raw(n) if n > 0 else b""
+    ch = c.char
+    store = ch.setdefault("rms", {}) if ch else {}
+    if action == 1:
+        blob = bytes.fromhex(store.get(str(kind), ""))
+        print("  RMS tải kiểu %d (%d byte)" % (kind, len(blob)))
+        await c.send(55, Writer().byte(kind).short(len(blob)).raw(blob))
+    else:
+        print("  RMS lưu kiểu %d (%d byte)" % (kind, len(data)))
+        if ch is not None:
+            store[str(kind)] = data.hex()
+            c.dirty = True
 
 
-@on(61)
-async def h_name_server(c, r):
-    pass   # client hỏi tên server; chưa cần trả lời
+@on(59)
+async def h_suckhoe(c, r):
+    pass   # client hỏi điểm sức khoẻ
+
+
+@on(-52)
+async def h_part_char(c, r):
+    kind, pid = r.byte(), r.short()
+    print("  PART_CHAR %d/%d: chưa có dữ liệu" % (kind, pid))
 
 
 # ----------------------------------------------------------------------

@@ -111,6 +111,14 @@ w_, h_, tile = mdata[0], mdata[1], mdata[2]
 assert len(mdata) == 3 + w_ * h_
 print("CHANGE_MAP:", mid, mname, "%dx%d tile%d" % (w_, h_, tile), "vị trí", tx, ty)
 
+r = Reader(expect(29))
+assert r.byte() == 0 and r.left() == 0
+print("LIST_SKILL: 0 kỹ năng")
+for kind in (2, 1, 4, 3):                  # giống client: xin RMS
+    send(55, Writer().byte(1).byte(kind).short(0).bytes())
+    r = Reader(expect(55)); k = r.byte(); n = r.short(); r.raw(n)
+    assert k == kind and r.left() == 0
+print("RMS: đã nhận 4 kiểu")
 send(-51, Writer().short(10400 + tile).bytes())
 r = Reader(expect(-51))
 iid = r.short(); png = r.raw(r.left())
