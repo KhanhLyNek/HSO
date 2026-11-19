@@ -1,0 +1,56 @@
+Server KO giả lập nghe 0.0.0.0:19129
+client kết nối ('127.0.0.1', 54104)
+C->S cmd=-40 (GET_KEY) len=0
+  S->C cmd=-40 (GET_KEY) len=9
+  key = 493f8fc36eba04cf
+C->S cmd=1 (LOGIN) len=37
+  LOGIN: {'user': '1', 'version': '4.0.3', 'device': 0}
+  S->C cmd=13 (LIST_CHAR/SELECT_CHAR) len=29
+C->S cmd=61 (NAME_SERVER) len=0
+  (chưa có handler)
+
+C->S cmd=13 (LIST_CHAR/SELECT_CHAR) len=5
+  SELECT_CHAR: 0 1
+  S->C cmd=3 (MAIN_CHAR_INFO) len=137
+  S->C cmd=12 (CHANGE_MAP) len=1240
+  S->C cmd=15 (CHAR_WEARING) len=74
+  S->C cmd=29 (LIST_SKILL) len=1
+C->S cmd=55 (SAVE_RMS) len=4
+  RMS tải kiểu 2 (0 byte)
+  S->C cmd=55 (SAVE_RMS) len=3
+C->S cmd=55 (SAVE_RMS) len=4
+  RMS tải kiểu 1 (0 byte)
+  S->C cmd=55 (SAVE_RMS) len=3
+C->S cmd=55 (SAVE_RMS) len=4
+  RMS tải kiểu 0 (0 byte)
+  S->C cmd=55 (SAVE_RMS) len=3
+C->S cmd=59 (PLAYER_SUCKHOE) len=0
+C->S cmd=55 (SAVE_RMS) len=4
+  RMS tải kiểu 4 (0 byte)
+  S->C cmd=55 (SAVE_RMS) len=3
+C->S cmd=55 (SAVE_RMS) len=4
+  RMS tải kiểu 3 (0 byte)
+  S->C cmd=55 (SAVE_RMS) len=3
+C->S cmd=-52 (LOAD_IMAGE_DATA_PART_CHAR) len=3
+  PART_CHAR 100/0: chưa có dữ liệu
+C->S cmd=-51 (LOAD_IMAGE) len=2
+  S->C cmd=-51 (LOAD_IMAGE) len=20607
+C->S cmd=-52 (LOAD_IMAGE_DATA_PART_CHAR) len=3
+  PART_CHAR 101/0: chưa có dữ liệu
+C->S cmd=-51 (LOAD_IMAGE) len=2
+  LOAD_IMAGE 10600: chưa có ảnh
+C->S cmd=12 (CHANGE_MAP) len=0
+  client đã tải xong map
+C->S cmd=59 (PLAYER_SUCKHOE) len=0
+C->S cmd=4 (OBJECT_MOVE) len=4
+C->S cmd=4 (OBJECT_MOVE) len=4
+C->S cmd=4 (OBJECT_MOVE) len=4
+C->S cmd=4 (OBJECT_MOVE) len=4
+C->S cmd=4 (OBJECT_MOVE) len=4
+C->S cmd=4 (OBJECT_MOVE) len=4
+C->S cmd=4 (OBJECT_MOVE) len=4
+C->S cmd=4 (OBJECT_MOVE) len=4
+C->S cmd=4 (OBJECT_MOVE) len=4
+client ngắt kết nối
+
+Đã tắt server Thỏ Mika.

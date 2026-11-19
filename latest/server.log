@@ -1,19 +1,19 @@
 Server KO giả lập nghe 0.0.0.0:19129
-client kết nối ('127.0.0.1', 43784)
+client kết nối ('127.0.0.1', 54104)
 C->S cmd=-40 (GET_KEY) len=0
   S->C cmd=-40 (GET_KEY) len=9
-  key = 9ff5006ed15e653e
+  key = 493f8fc36eba04cf
 C->S cmd=1 (LOGIN) len=37
   LOGIN: {'user': '1', 'version': '4.0.3', 'device': 0}
-  S->C cmd=13 (LIST_CHAR/SELECT_CHAR) len=25
+  S->C cmd=13 (LIST_CHAR/SELECT_CHAR) len=29
 C->S cmd=61 (NAME_SERVER) len=0
   (chưa có handler)
 
-C->S cmd=5 (CHAR_INFO) len=2
 C->S cmd=13 (LIST_CHAR/SELECT_CHAR) len=5
   SELECT_CHAR: 0 1
   S->C cmd=3 (MAIN_CHAR_INFO) len=137
   S->C cmd=12 (CHANGE_MAP) len=1240
+  S->C cmd=15 (CHAR_WEARING) len=74
   S->C cmd=29 (LIST_SKILL) len=1
 C->S cmd=55 (SAVE_RMS) len=4
   RMS tải kiểu 2 (0 byte)
@@ -51,53 +51,6 @@ C->S cmd=4 (OBJECT_MOVE) len=4
 C->S cmd=4 (OBJECT_MOVE) len=4
 C->S cmd=4 (OBJECT_MOVE) len=4
 C->S cmd=4 (OBJECT_MOVE) len=4
-C->S cmd=4 (OBJECT_MOVE) len=4
-C->S cmd=4 (OBJECT_MOVE) len=4
-C->S cmd=4 (OBJECT_MOVE) len=4
-C->S cmd=4 (OBJECT_MOVE) len=4
-C->S cmd=4 (OBJECT_MOVE) len=4
-C->S cmd=4 (OBJECT_MOVE) len=4
-C->S cmd=4 (OBJECT_MOVE) len=4
-C->S cmd=4 (OBJECT_MOVE) len=4
-C->S cmd=4 (OBJECT_MOVE) len=4
-C->S cmd=4 (OBJECT_MOVE) len=4
-C->S cmd=4 (OBJECT_MOVE) len=4
-C->S cmd=4 (OBJECT_MOVE) len=4
-C->S cmd=4 (OBJECT_MOVE) len=4
-C->S cmd=4 (OBJECT_MOVE) len=4
-C->S cmd=4 (OBJECT_MOVE) len=4
-C->S cmd=4 (OBJECT_MOVE) len=4
-C->S cmd=4 (OBJECT_MOVE) len=4
-C->S cmd=4 (OBJECT_MOVE) len=4
-C->S cmd=4 (OBJECT_MOVE) len=4
-C->S cmd=4 (OBJECT_MOVE) len=4
-C->S cmd=4 (OBJECT_MOVE) len=4
-C->S cmd=4 (OBJECT_MOVE) len=4
-C->S cmd=4 (OBJECT_MOVE) len=4
-C->S cmd=4 (OBJECT_MOVE) len=4
-C->S cmd=4 (OBJECT_MOVE) len=4
-C->S cmd=4 (OBJECT_MOVE) len=4
-C->S cmd=4 (OBJECT_MOVE) len=4
-C->S cmd=4 (OBJECT_MOVE) len=4
-C->S cmd=4 (OBJECT_MOVE) len=4
-C->S cmd=59 (PLAYER_SUCKHOE) len=0
-client kết nối ('127.0.0.1', 54906)
-C->S cmd=-40 (GET_KEY) len=0
-  S->C cmd=-40 (GET_KEY) len=9
-  key = e448f0abfcb785ce
-C->S cmd=-91 (MINI_GAME) len=1
-  (chưa có handler)
-    0000  05                                                .
-C->S cmd=1 (LOGIN) len=35
-  LOGIN: {'user': '', 'version': '4.0.3', 'device': 0}
-  tạo tài khoản mới: 
-  S->C cmd=13 (LIST_CHAR/SELECT_CHAR) len=1
-C->S cmd=61 (NAME_SERVER) len=0
-  (chưa có handler)
-
-C->S cmd=4 (OBJECT_MOVE) len=4
-C->S cmd=4 (OBJECT_MOVE) len=4
-client ngắt kết nối
 client ngắt kết nối
 
 Đã tắt server Thỏ Mika.
