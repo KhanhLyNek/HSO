@@ -44,7 +44,38 @@ for x in ["tester", "123456", "4.0.3", "0", "0", "0"]:
     w.utf(x)
 w.byte(1).byte(2).int(-1).byte(0).byte(1).byte(0).byte(0).byte(0).short(0).utf("com.test")
 send(1, w.bytes())
-cmd, data = recv()
-r = Reader(data)
-print("Nhận cmd", cmd, "->", r.utf())
+
+
+def parse_list(data):
+    r = Reader(data); out = []
+    for _ in range(r.byte()):
+        cid, name = r.int(), r.utf()
+        head, hair, eye = r.byte(), r.byte(), r.byte()
+        for _ in range(r.byte()):
+            r.byte(); r.byte()
+        lv, clazz = r.short(), r.byte(); r.byte(); r.byte()
+        if r.short() >= 0:
+            r.utf(); r.byte()
+        out.append((cid, name, clazz, lv))
+    assert r.left() == 0, "thừa byte"
+    return out
+
+
+def expect(want):
+    cmd, data = recv()
+    if cmd == 2:
+        print("  Hộp thoại:", Reader(data).utf())
+    assert cmd == want, "chờ cmd %d, nhận %d" % (want, cmd)
+    return data
+
+
+chars = parse_list(expect(13))
+print("Danh sách nhân vật:", chars)
+if not chars:
+    send(14, Writer().byte(0).utf("ThoMika%d" % (id(s) % 1000)).byte(1).byte(2).byte(3).bytes())
+    chars = parse_list(expect(13))
+    print("Sau khi tạo:", chars)
+send(13, Writer().byte(0).int(chars[0][0]).bytes())
+expect(2)
 s.close()
+print("OK")
